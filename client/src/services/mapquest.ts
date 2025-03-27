@@ -47,22 +47,30 @@ export const addMarker = (
   return window.L.marker(position, options).addTo(map);
 };
 
-// Get current location using browser's Geolocation API
-export const getCurrentLocation = (): Promise<Coordinates> => {
+// Extended location type with accuracy information
+export type LocationWithAccuracy = Coordinates & {
+  accuracy: number;
+};
+
+// Get current location using browser's Geolocation API with accuracy information
+export const getCurrentLocation = (): Promise<LocationWithAccuracy> => {
   return new Promise((resolve, reject) => {
     if (!navigator.geolocation) {
       reject(new Error("Geolocation ay hindi sinusuportahan ng iyong browser. Subukan ang ibang browser."));
       return;
     }
 
-    // Use high accuracy option and longer timeout for better results
+    // Attempt to force high accuracy by using settings and clear options
     navigator.geolocation.getCurrentPosition(
       (position) => {
         const { latitude, longitude, accuracy } = position.coords;
         console.log(`Location accuracy: ${accuracy} meters`);
+        
+        // Return location with accuracy information
         resolve({
           lat: latitude,
-          lng: longitude
+          lng: longitude,
+          accuracy: accuracy
         });
       },
       (error) => {
@@ -82,8 +90,8 @@ export const getCurrentLocation = (): Promise<Coordinates> => {
       },
       { 
         enableHighAccuracy: true, 
-        timeout: 10000,  // Longer timeout (10 seconds)
-        maximumAge: 0    // Always get a fresh position
+        timeout: 15000,    // Longer timeout (15 seconds) to give more time for GPS
+        maximumAge: 0      // Always get a fresh position
       }
     );
   });

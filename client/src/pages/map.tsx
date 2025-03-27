@@ -7,7 +7,13 @@ import { ParkingSpotClient } from "@shared/schema";
 import Header from "@/components/Header";
 import ParkingSpotList from "@/components/ParkingSpotList";
 import ParkingSpotDetail from "@/components/ParkingSpotDetail";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { 
+  Dialog, 
+  DialogContent,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter 
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import {
   Coordinates,
@@ -111,12 +117,15 @@ export default function Map() {
   // Reference to track the user marker
   const userMarkerRef = useRef<L.Marker | null>(null);
   
-  // Handle getting current location
+  // State for location permission dialog
+  const [showLocationHelpDialog, setShowLocationHelpDialog] = useState<boolean>(false);
+  
+  // Handle getting current location with improved accuracy and error handling
   const handleGetCurrentLocation = async () => {
     try {
       toast({
         title: "Hinahanap ang lokasyon...",
-        description: "Naglo-load ang iyong kasalukuyang lokasyon...",
+        description: "Naglo-load ang iyong kasalukuyang lokasyon. Pakipayagan ang location sharing.",
       });
       
       // Clear any existing user marker
@@ -125,9 +134,16 @@ export default function Map() {
         userMarkerRef.current = null;
       }
 
-      // Get current location with high accuracy
+      // Get current location with required high accuracy
       const location = await getCurrentLocation();
+      
+      // Store location for use in other parts of the app
       setUserLocation(location);
+      
+      // Check accuracy and show appropriate message
+      const accuracyMessage = location.accuracy > 1000 
+        ? "Ang lokasyon mo ay hindi masyadong tumpak. Pakitingnan ang GPS settings."
+        : "Nakuha ang iyong lokasyon!";
 
       if (mapRef.current) {
         // Smoothly animate to the user's location with enhanced zoom
@@ -152,14 +168,30 @@ export default function Map() {
           zIndexOffset: 1000 // Keep user marker on top
         });
         
-        // Add a visible circle to show accuracy
-        const accuracyCircle = window.L.circle([location.lat, location.lng], {
-          radius: 50, // approximate accuracy in meters
-          weight: 1,
-          color: '#3B82F6',
-          fillColor: '#93C5FD',
-          fillOpacity: 0.15
-        }).addTo(mapRef.current);
+        // Use the actual accuracy from the GPS as the radius of the circle
+        // This helps users understand how accurate their location is
+        try {
+          const accuracyCircle = window.L.circle([location.lat, location.lng], {
+            radius: Math.min(location.accuracy, 1000), // Cap at 1km for visual purposes
+            weight: 1,
+            color: '#3B82F6',
+            fillColor: '#93C5FD',
+            fillOpacity: 0.15
+          }).addTo(mapRef.current);
+        } catch (err) {
+          console.error("Error adding accuracy circle:", err);
+        }
+        
+        // Show success toast with accuracy information
+        toast({
+          title: location.accuracy > 1000 
+            ? "Nakuha ang lokasyon mo (mababang accuracy)" 
+            : "Nakuha ang lokasyon mo!",
+          description: location.accuracy > 1000
+            ? `Ang accuracy ay mababa (${(location.accuracy/1000).toFixed(1)}km). Para sa mas magandang resulta, i-ON ang GPS at location services.`
+            : `Ang lokasyon mo ay tumpak hanggang ${location.accuracy.toFixed(0)} metro.`,
+          variant: location.accuracy > 1000 ? "default" : "default"
+        });
         
         // Process parking spots if available
         if (parkingSpots && Array.isArray(parkingSpots) && parkingSpots.length > 0) {
@@ -218,11 +250,17 @@ export default function Map() {
       }
     } catch (error: any) {
       console.error("Error getting location:", error);
+      
+      // Show a more detailed toast message
       toast({
-        title: "May error sa lokasyon",
-        description: error.message || "Hindi makuha ang iyong lokasyon",
-        variant: "destructive"
+        title: "Hindi ma-access ang lokasyon",
+        description: "May problema sa pag-access ng iyong lokasyon. Tingnan ang Location Help para sa tulong.",
+        variant: "destructive",
+        action: <Button variant="outline" onClick={() => setShowLocationHelpDialog(true)}>Location Help</Button>
       });
+      
+      // Show the location help dialog
+      setShowLocationHelpDialog(true);
     }
   };
 
@@ -442,6 +480,70 @@ export default function Map() {
           userLocation={userLocation}
         />
       )}
+      
+      {/* Location Help Dialog */}
+      <Dialog open={showLocationHelpDialog} onOpenChange={setShowLocationHelpDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogTitle className="flex items-center gap-2 text-xl">
+            <i className="fas fa-location-arrow text-primary"></i>
+            Location Sharing Help
+          </DialogTitle>
+          <DialogDescription>
+            Kelangan ng EzPark Connect ng access sa iyong location para makahanap ng mga parking spots malapit sa iyo.
+          </DialogDescription>
+          
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <h3 className="font-medium text-lg text-primary">Bakit hindi gumagana ang Location Sharing?</h3>
+              <ul className="list-disc pl-5 space-y-2">
+                <li>Hindi mo pa pinagana ang Location sharing sa browser</li>
+                <li>Hindi aktibo ang GPS mo sa phone o device</li>
+                <li>May problema sa internet connection</li>
+                <li>Nasa loob ka ng gusali o area na may mahina GPS</li>
+              </ul>
+            </div>
+            
+            <div className="space-y-2 border-t border-gray-200 pt-4">
+              <h3 className="font-medium text-lg text-primary">Paano i-enable ang Location:</h3>
+              <div className="rounded-lg bg-slate-50 p-4 space-y-4">
+                <div>
+                  <h4 className="font-semibold">Sa Android:</h4>
+                  <ol className="list-decimal pl-5">
+                    <li>Buksan ang <strong>Settings</strong></li>
+                    <li>Pumunta sa <strong>Privacy</strong> o <strong>Location</strong></li>
+                    <li>I-ON ang <strong>Location services</strong></li>
+                    <li>Tingnan ang browser settings para sa permissions</li>
+                  </ol>
+                </div>
+                
+                <div>
+                  <h4 className="font-semibold">Sa iPhone:</h4>
+                  <ol className="list-decimal pl-5">
+                    <li>Buksan ang <strong>Settings</strong></li>
+                    <li>Pumunta sa <strong>Privacy & Security</strong></li>
+                    <li>Piliin ang <strong>Location Services</strong> at i-ON</li>
+                    <li>Hanapin ang browser mo at piliin ang <strong>While Using</strong></li>
+                  </ol>
+                </div>
+                
+                <div>
+                  <h4 className="font-semibold">Sa Browser:</h4>
+                  <ol className="list-decimal pl-5">
+                    <li>Tingnan ang address bar para sa location icon</li>
+                    <li>I-click ito at piliin na <strong>Allow</strong></li>
+                    <li>Refresh ang page pagkatapos mag-allow</li>
+                  </ol>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <DialogFooter className="flex gap-2 sm:justify-between">
+            <Button variant="outline" onClick={() => setShowLocationHelpDialog(false)}>Close</Button>
+            <Button onClick={handleGetCurrentLocation}>Try Again</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
