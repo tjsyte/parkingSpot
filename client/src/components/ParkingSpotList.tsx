@@ -52,8 +52,8 @@ export default function ParkingSpotList({
     <div 
       className={`
         ${showList ? "block" : "hidden"} 
-        sm:block h-full sm:w-80 lg:w-96 bg-white shadow-md overflow-y-auto
-        scrollbar-hide
+        sm:block h-full sm:w-80 lg:w-96 bg-white shadow-xl overflow-y-auto
+        scrollbar-hide rounded-r-lg
         ${showList && !userLocation ? "absolute inset-0 z-20" : ""}
       `}
     >

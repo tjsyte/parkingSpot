@@ -35,50 +35,61 @@ export default function ParkingSpot({ spot, onSelect }: ParkingSpotProps) {
   const status = getStatus();
 
   return (
-    <div className="mb-4 bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow">
+    <div className="mb-4 bg-white border border-gray-200 rounded-lg shadow-md hover:shadow-lg transition-all cursor-pointer"
+         onClick={() => onSelect(spot)}>
       <div className="p-4">
         <div className="flex justify-between items-start">
-          <h3 className="text-lg font-semibold text-gray-900">{spot.name}</h3>
+          <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+            <i className="fas fa-parking text-primary mr-2 opacity-80"></i>
+            {spot.name}
+          </h3>
           <Badge className={`${status.color}`} variant="outline">
             {status.text}
           </Badge>
         </div>
         
         <div className="mt-2 flex items-center text-sm text-gray-500">
-          <i className="fas fa-map-marker-alt text-gray-400 mr-1"></i>
+          <i className="fas fa-map-marker-alt text-primary mr-2"></i>
           <span>{spot.address}</span>
         </div>
         
-        <div className="mt-3 grid grid-cols-2 gap-2">
-          <div className="flex items-center">
-            <i className="fas fa-road text-gray-400 mr-1"></i>
-            <span className="text-sm">{spot.distance ? `${spot.distance.toFixed(1)} km away` : "Distance unknown"}</span>
+        <div className="mt-3 grid grid-cols-2 gap-3">
+          <div className="flex items-center p-2 bg-gray-50 rounded-md hover:bg-gray-100 transition-colors">
+            <i className="fas fa-road text-primary mr-2"></i>
+            <span className="text-sm font-medium">{spot.distance ? `${spot.distance.toFixed(1)} km away` : "Distance unknown"}</span>
           </div>
-          <div className="flex items-center">
-            <i className="fas fa-car text-gray-400 mr-1"></i>
-            <span className="text-sm">{spot.availableSpots} spots left</span>
+          <div className="flex items-center p-2 bg-gray-50 rounded-md hover:bg-gray-100 transition-colors">
+            <i className="fas fa-car text-primary mr-2"></i>
+            <span className="text-sm font-medium">{spot.availableSpots} spots left</span>
           </div>
-          <div className="flex items-center">
-            <i className="fas fa-tag text-gray-400 mr-1"></i>
-            <span className="text-sm">{formatRate()}</span>
+          <div className="flex items-center p-2 bg-gray-50 rounded-md hover:bg-gray-100 transition-colors">
+            <i className="fas fa-tag text-primary mr-2"></i>
+            <span className="text-sm font-medium">{formatRate()}</span>
           </div>
-          <div className="flex items-center">
-            <i className="fas fa-clock text-gray-400 mr-1"></i>
-            <span className="text-sm">{formatHours()}</span>
+          <div className="flex items-center p-2 bg-gray-50 rounded-md hover:bg-gray-100 transition-colors">
+            <i className="fas fa-clock text-primary mr-2"></i>
+            <span className="text-sm font-medium">{formatHours()}</span>
           </div>
         </div>
         
         <div className="mt-4 flex justify-between">
-          <Button variant="outline" size="sm" className="text-primary bg-blue-50 hover:bg-blue-100">
+          <Button variant="outline" size="sm" className="text-primary border-primary hover:bg-blue-50"
+            onClick={(e) => {
+              e.stopPropagation(); // Prevent triggering parent onClick
+              // Save functionality would go here
+            }}>
             <i className="far fa-star mr-1"></i> Save
           </Button>
           <Button 
             size="sm" 
             className="bg-primary hover:bg-blue-600"
-            onClick={() => onSelect(spot)}
+            onClick={(e) => {
+              e.stopPropagation(); // Prevent triggering parent onClick
+              onSelect(spot);
+            }}
             disabled={spot.availableSpots === 0}
           >
-            <i className="fas fa-directions mr-1"></i> Directions
+            <i className="fas fa-info-circle mr-1"></i> View Details
           </Button>
         </div>
       </div>

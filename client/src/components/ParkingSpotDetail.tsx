@@ -82,9 +82,10 @@ export default function ParkingSpotDetail({
 
   return (
     <Dialog open={true} onOpenChange={() => onClose()}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-lg z-50 shadow-xl">
         <DialogHeader>
-          <DialogTitle className="text-xl font-bold text-gray-900">
+          <DialogTitle className="text-xl font-bold text-gray-900 flex items-center">
+            <i className="fas fa-parking text-primary mr-2"></i>
             {spot.name}
           </DialogTitle>
         </DialogHeader>
@@ -92,7 +93,7 @@ export default function ParkingSpotDetail({
         {/* Status and Address */}
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center">
-            <i className="fas fa-map-marker-alt text-gray-500 mr-2"></i>
+            <i className="fas fa-map-marker-alt text-primary mr-2"></i>
             <span className="text-gray-700">{spot.address}</span>
           </div>
           <Badge className={`${status.color}`} variant="outline">
@@ -102,28 +103,28 @@ export default function ParkingSpotDetail({
 
         {/* Details Grid */}
         <div className="grid grid-cols-2 gap-4 mb-6">
-          <div className="bg-gray-50 p-3 rounded-lg">
+          <div className="bg-gray-50 p-3 rounded-lg hover:shadow-md transition-shadow">
             <div className="text-sm text-gray-500 mb-1">Distance</div>
             <div className="font-medium flex items-center">
               <i className="fas fa-road text-primary mr-2"></i>
               <span>{spot.distance ? `${spot.distance.toFixed(1)} km` : "Unknown"}</span>
             </div>
           </div>
-          <div className="bg-gray-50 p-3 rounded-lg">
+          <div className="bg-gray-50 p-3 rounded-lg hover:shadow-md transition-shadow">
             <div className="text-sm text-gray-500 mb-1">Availability</div>
             <div className="font-medium flex items-center">
               <i className="fas fa-car text-primary mr-2"></i>
               <span>{spot.availableSpots} spots left</span>
             </div>
           </div>
-          <div className="bg-gray-50 p-3 rounded-lg">
+          <div className="bg-gray-50 p-3 rounded-lg hover:shadow-md transition-shadow">
             <div className="text-sm text-gray-500 mb-1">Rate</div>
             <div className="font-medium flex items-center">
               <i className="fas fa-tag text-primary mr-2"></i>
               <span>{formatRate()}</span>
             </div>
           </div>
-          <div className="bg-gray-50 p-3 rounded-lg">
+          <div className="bg-gray-50 p-3 rounded-lg hover:shadow-md transition-shadow">
             <div className="text-sm text-gray-500 mb-1">Hours</div>
             <div className="font-medium flex items-center">
               <i className="fas fa-clock text-primary mr-2"></i>
@@ -133,7 +134,7 @@ export default function ParkingSpotDetail({
         </div>
 
         {/* Estimated Time of Arrival */}
-        <div className="bg-blue-50 p-4 rounded-lg mb-6">
+        <div className="bg-blue-50 p-4 rounded-lg mb-6 hover:shadow-md transition-shadow">
           <div className="flex items-center justify-between">
             <div>
               <h4 className="font-medium text-gray-900">Estimated Time of Arrival</h4>
@@ -145,30 +146,33 @@ export default function ParkingSpotDetail({
 
         {/* Features */}
         <div className="mb-6">
-          <h4 className="font-medium text-gray-900 mb-3">Features</h4>
+          <h4 className="font-medium text-gray-900 mb-3 flex items-center">
+            <i className="fas fa-star text-primary mr-2"></i>
+            Features
+          </h4>
           <div className="grid grid-cols-2 gap-2">
-            <div className="flex items-center text-sm">
+            <div className="flex items-center text-sm p-2 rounded-md hover:bg-gray-50">
               <i className={`fas fa-shield-alt mr-2 ${spot.features.hasSecurityGuard ? 'text-green-500' : 'text-gray-400'}`}></i>
               <span>24/7 Security</span>
             </div>
-            <div className="flex items-center text-sm">
+            <div className="flex items-center text-sm p-2 rounded-md hover:bg-gray-50">
               <i className={`fas fa-credit-card mr-2 ${spot.features.hasCardPayment ? 'text-green-500' : 'text-gray-400'}`}></i>
               <span>Card Payment</span>
             </div>
-            <div className="flex items-center text-sm">
+            <div className="flex items-center text-sm p-2 rounded-md hover:bg-gray-50">
               <i className={`fas fa-wheelchair mr-2 ${spot.features.hasAccessibleParking ? 'text-green-500' : 'text-gray-400'}`}></i>
               <span>Accessible Parking</span>
             </div>
-            <div className="flex items-center text-sm">
+            <div className="flex items-center text-sm p-2 rounded-md hover:bg-gray-50">
               <i className={`fas fa-charging-station mr-2 ${spot.features.hasEvCharging ? 'text-green-500' : 'text-gray-400'}`}></i>
               <span>EV Charging</span>
             </div>
           </div>
         </div>
 
-        <DialogFooter>
-          <Button variant="outline" className="bg-blue-50 hover:bg-blue-100">
-            <i className="far fa-star mr-1"></i> Save as Favorite
+        <DialogFooter className="gap-2">
+          <Button variant="outline" className="bg-blue-50 hover:bg-blue-100" onClick={onClose}>
+            <i className="fas fa-times mr-1"></i> Close
           </Button>
           <Button 
             onClick={handleGetDirections}
