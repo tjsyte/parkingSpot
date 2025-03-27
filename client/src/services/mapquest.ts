@@ -242,28 +242,51 @@ export const enhanceParkingSpotsWithDistance = async (
   spots: ParkingSpotClient[],
   userLocation: Coordinates
 ): Promise<ParkingSpotClient[]> => {
-  const enhancedSpots = await Promise.all(
-    spots.map(async (spot) => {
-      try {
-        const matrix = await calculateDistanceMatrix(
-          userLocation,
-          { lat: spot.latitude, lng: spot.longitude }
-        );
-        
-        return {
-          ...spot,
-          distance: matrix.distance,
-          duration: matrix.duration
-        };
-      } catch (error) {
-        console.error("Error calculating distance for spot:", spot.id, error);
-        return spot;
-      }
-    })
-  );
+  console.log("Starting enhanceParkingSpotsWithDistance with", spots.length, "spots");
   
-  // Sort by distance
-  return enhancedSpots.sort((a, b) => (a.distance || 999) - (b.distance || 999));
+  if (!spots || spots.length === 0) {
+    console.log("No spots to process");
+    return [];
+  }
+  
+  if (!userLocation || typeof userLocation.lat !== 'number' || typeof userLocation.lng !== 'number') {
+    console.error("Invalid user location:", userLocation);
+    return spots;
+  }
+  
+  try {
+    const enhancedSpots = await Promise.all(
+      spots.map(async (spot, index) => {
+        try {
+          console.log(`Processing spot ${index+1}/${spots.length}: ${spot.name}`);
+          
+          const matrix = await calculateDistanceMatrix(
+            userLocation,
+            { lat: spot.latitude, lng: spot.longitude }
+          );
+          
+          return {
+            ...spot,
+            distance: matrix.distance,
+            duration: matrix.duration
+          };
+        } catch (error) {
+          console.error("Error calculating distance for spot:", spot.id, error);
+          return spot;
+        }
+      })
+    );
+    
+    console.log("All spots processed. Sorting by distance...");
+    
+    // Sort by distance
+    const sortedSpots = enhancedSpots.sort((a, b) => (a.distance || 999) - (b.distance || 999));
+    console.log("Spots sorted. Returning", sortedSpots.length, "enhanced spots");
+    return sortedSpots;
+  } catch (error) {
+    console.error("Error in enhanceParkingSpotsWithDistance:", error);
+    return spots;
+  }
 };
 
 // Add MapQuest type definitions

@@ -258,7 +258,9 @@ export default function Map() {
             description: "Kinakalkula ang distansya sa mga parking spot...",
           });
           
+          console.log("Calculating distances for all", parkingSpots.length, "parking spots...");
           const enhanced = await enhanceParkingSpotsWithDistance(parkingSpots as ParkingSpotClient[], location);
+          console.log("Enhanced spots processed:", enhanced.length);
           setEnhancedSpots(enhanced);
 
           // Clear existing markers and add new ones
