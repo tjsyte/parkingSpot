@@ -7,6 +7,8 @@ import { ParkingSpotClient } from "@shared/schema";
 import Header from "@/components/Header";
 import ParkingSpotList from "@/components/ParkingSpotList";
 import ParkingSpotDetail from "@/components/ParkingSpotDetail";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import {
   Coordinates,
   initializeMap,
@@ -15,12 +17,48 @@ import {
   enhanceParkingSpotsWithDistance
 } from "@/services/mapquest";
 
+// Define Leaflet namespace for TypeScript
+declare namespace L {
+  interface Map {
+    setView: (center: [number, number], zoom: number) => any;
+    remove: () => void;
+    zoomIn: () => void;
+    zoomOut: () => void;
+  }
+  
+  interface Marker {
+    on: (event: string, handler: Function) => void;
+  }
+  
+  interface MarkerOptions {
+    icon?: any;
+    title?: string;
+  }
+}
+
+// Define window.L for the MapQuest API
+declare global {
+  interface Window {
+    L: {
+      Map: any;
+      mapquest: {
+        icons: {
+          circle: (options: any) => any;
+          marker: (options: any) => any;
+        }
+      };
+      marker: (position: Coordinates, options?: any) => L.Marker;
+    }
+  }
+}
+
 export default function Map() {
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const { user, isAuthenticated } = useAuth();
   const mapRef = useRef<L.Map | null>(null);
   const [showParkingList, setShowParkingList] = useState<boolean>(true);
+  const [showMapDialog, setShowMapDialog] = useState<boolean>(false);
   const [userLocation, setUserLocation] = useState<Coordinates | null>(null);
   const [selectedSpot, setSelectedSpot] = useState<ParkingSpotClient | null>(null);
   const [enhancedSpots, setEnhancedSpots] = useState<ParkingSpotClient[]>([]);
@@ -37,28 +75,71 @@ export default function Map() {
     }
   }, [isAuthenticated, navigate]);
 
-  // Initialize map when component mounts
+  // Initialize map when dialog opens
   useEffect(() => {
-    if (!mapRef.current) {
-      try {
-        mapRef.current = initializeMap('map');
-      } catch (error) {
-        console.error("Error initializing map:", error);
-        toast({
-          title: "Map Error",
-          description: "Failed to initialize map. Please try again later.",
-          variant: "destructive"
-        });
-      }
+    if (showMapDialog && !mapRef.current) {
+      // Short delay to ensure the DOM is ready
+      const timer = setTimeout(() => {
+        try {
+          mapRef.current = initializeMap('map');
+          
+          // If we have user location, set the map view and add marker
+          if (userLocation) {
+            mapRef.current?.setView([userLocation.lat, userLocation.lng], 14);
+            
+            // Add user marker
+            addMarker(mapRef.current, userLocation, {
+              icon: window.L.mapquest.icons.circle({
+                primaryColor: '#3B82F6'
+              }),
+              title: "Your Location"
+            });
+            
+            // Process parking spots if available
+            if (parkingSpots && Array.isArray(parkingSpots) && parkingSpots.length > 0) {
+              parkingSpots.forEach((spot: ParkingSpotClient) => {
+                const isAvailable = spot.availableSpots > 0;
+                
+                const marker = addMarker(
+                  mapRef.current!,
+                  { lat: spot.latitude, lng: spot.longitude },
+                  {
+                    icon: window.L.mapquest.icons.marker({
+                      primaryColor: isAvailable ? '#10B981' : '#EF4444',
+                      secondaryColor: '#FFFFFF',
+                      symbol: 'P'
+                    }),
+                    title: spot.name
+                  }
+                );
+                
+                // Add click event to marker
+                marker.on('click', () => {
+                  setSelectedSpot(spot);
+                  setShowMapDialog(false);
+                });
+              });
+            }
+          }
+        } catch (error) {
+          console.error("Error initializing map:", error);
+          toast({
+            title: "Map Error",
+            description: "Failed to initialize map. Please try again later.",
+            variant: "destructive"
+          });
+        }
+      }, 100);
+      
+      return () => clearTimeout(timer);
     }
-
-    return () => {
-      if (mapRef.current) {
-        mapRef.current.remove();
-        mapRef.current = null;
-      }
-    };
-  }, [toast]);
+    
+    // Cleanup map when dialog closes
+    if (!showMapDialog && mapRef.current) {
+      mapRef.current.remove();
+      mapRef.current = null;
+    }
+  }, [showMapDialog, userLocation, parkingSpots, toast]);
 
   // Handle getting current location
   const handleGetCurrentLocation = async () => {
@@ -83,8 +164,8 @@ export default function Map() {
         });
 
         // Process parking spots if available
-        if (parkingSpots && parkingSpots.length > 0) {
-          const enhanced = await enhanceParkingSpotsWithDistance(parkingSpots, location);
+        if (parkingSpots && Array.isArray(parkingSpots) && parkingSpots.length > 0) {
+          const enhanced = await enhanceParkingSpotsWithDistance(parkingSpots as ParkingSpotClient[], location);
           setEnhancedSpots(enhanced);
 
           // Add markers for parking spots
@@ -158,96 +239,146 @@ export default function Map() {
     }
   };
 
+
+
   return (
     <div className="h-screen w-full flex flex-col">
       <Header userName={user?.displayName || user?.email || "User"} />
 
       {/* Main Content */}
-      <main className="flex-1 flex h-[calc(100%-4rem)]">
-        {/* Sidebar for Parking Spots List - Hidden on Mobile */}
-        <div className="hidden md:block w-80 lg:w-96 bg-white shadow-md z-10">
-          <ParkingSpotList 
-            spots={enhancedSpots}
-            showList={true}
-            onSpotSelect={handleSpotSelect}
-            isLoading={isLoading}
-            userLocation={userLocation}
-          />
-        </div>
+      <main className="flex-1 flex flex-col p-4 h-[calc(100%-4rem)]">
+        {/* Parking Spots Component (Default View) */}
+        <div className="w-full max-w-4xl mx-auto">
+          {/* Open Map Button */}
+          <div className="mb-6 flex justify-center">
+            <Button 
+              onClick={() => setShowMapDialog(true)}
+              className="bg-primary hover:bg-blue-600 text-white py-2 px-6 rounded-lg shadow-lg flex items-center justify-center gap-2 w-full md:w-auto"
+              size="lg"
+            >
+              <i className="fas fa-map-marked-alt text-lg"></i>
+              <span>Open Map View</span>
+            </Button>
+          </div>
 
-        {/* Mobile Slide-in Panel for Parking Spots */}
-        <div className={`md:hidden fixed inset-0 bg-white z-30 transition-transform duration-300 transform ${showParkingList ? 'translate-x-0' : '-translate-x-full'}`}>
-          <div className="h-full flex flex-col">
-            <div className="flex justify-between items-center p-4 border-b">
-              <h2 className="text-lg font-semibold">Parking Spots</h2>
-              <button 
-                onClick={toggleParkingList}
-                className="h-8 w-8 flex items-center justify-center rounded-full hover:bg-gray-100"
-              >
-                <i className="fas fa-times"></i>
-              </button>
+          {/* Parking Spots Card with Title */}
+          <div className="bg-white rounded-lg shadow-md overflow-hidden">
+            <div className="p-4 bg-primary text-white">
+              <h2 className="text-xl font-semibold flex items-center">
+                <i className="fas fa-parking mr-2"></i>
+                Available Parking Spots
+              </h2>
+              <p className="text-sm opacity-90 mt-1">Find parking spots near you</p>
             </div>
-            <div className="flex-1 overflow-auto">
+            
+            <div className="h-[calc(100vh-16rem)] overflow-y-auto">
               <ParkingSpotList 
                 spots={enhancedSpots}
                 showList={true}
-                onSpotSelect={(spot) => {
-                  setShowParkingList(false);
-                  handleSpotSelect(spot);
-                }}
-                isLoading={isLoading}
+                onSpotSelect={handleSpotSelect}
+                isLoading={isLoading || !userLocation}
                 userLocation={userLocation}
               />
+            </div>
+            
+            {/* Bottom Action Bar */}
+            <div className="p-4 border-t flex flex-col sm:flex-row gap-2 justify-between">
+              <div className="text-sm text-gray-600">
+                {userLocation ? (
+                  <div className="flex items-center">
+                    <i className="fas fa-map-marker-alt text-primary mr-1"></i>
+                    <span>Your location is set</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center">
+                    <i className="fas fa-exclamation-circle text-yellow-500 mr-1"></i>
+                    <span>Location not set</span>
+                  </div>
+                )}
+              </div>
+              <Button
+                onClick={handleGetCurrentLocation}
+                variant="outline"
+                className="text-primary border-primary"
+              >
+                <i className="fas fa-location-arrow mr-1"></i>
+                Get My Location
+              </Button>
             </div>
           </div>
         </div>
 
-        {/* Map Container */}
-        <div className="relative flex-1">
-          {/* Map */}
-          <div id="map" className="h-full w-full">
-            {isLoading && (
-              <div className="absolute inset-0 bg-gray-100 bg-opacity-70 flex items-center justify-center z-10">
-                <div className="text-center">
-                  <i className="fas fa-circle-notch fa-spin text-4xl text-primary mb-2"></i>
-                  <p className="text-gray-700">Loading map...</p>
+        {/* Map Dialog (Fullscreen) */}
+        <Dialog open={showMapDialog} onOpenChange={setShowMapDialog}>
+          <DialogContent className="max-w-full w-full h-full max-h-screen p-0 border-none bg-transparent">
+            <div className="h-screen w-full flex flex-col bg-white">
+              {/* Map Header */}
+              <div className="bg-primary text-white p-2 flex justify-between items-center z-20">
+                <h2 className="text-lg font-semibold flex items-center">
+                  <i className="fas fa-map-marked-alt mr-2"></i>
+                  EzPark Connect Map
+                </h2>
+                <Button 
+                  variant="ghost" 
+                  className="h-8 w-8 p-0 text-white hover:bg-blue-600" 
+                  onClick={() => setShowMapDialog(false)}
+                >
+                  <i className="fas fa-times"></i>
+                </Button>
+              </div>
+              
+              {/* Map Container */}
+              <div className="relative flex-1">
+                {/* Map */}
+                <div id="map" className="h-full w-full">
+                  {isLoading && (
+                    <div className="absolute inset-0 bg-gray-100 bg-opacity-70 flex items-center justify-center z-10">
+                      <div className="text-center">
+                        <i className="fas fa-circle-notch fa-spin text-4xl text-primary mb-2"></i>
+                        <p className="text-gray-700">Loading map...</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Map Controls */}
+                <div className="absolute top-4 right-4 flex flex-col space-y-2 z-10">
+                  <button 
+                    onClick={handleZoomIn}
+                    className="h-10 w-10 bg-white rounded-full shadow-md flex items-center justify-center hover:bg-gray-100"
+                  >
+                    <i className="fas fa-plus text-gray-600"></i>
+                  </button>
+                  <button 
+                    onClick={handleZoomOut}
+                    className="h-10 w-10 bg-white rounded-full shadow-md flex items-center justify-center hover:bg-gray-100"
+                  >
+                    <i className="fas fa-minus text-gray-600"></i>
+                  </button>
+                </div>
+
+                {/* Current Location Button */}
+                <button 
+                  onClick={handleGetCurrentLocation}
+                  className="absolute bottom-8 right-4 h-12 w-12 bg-primary text-white rounded-full shadow-lg flex items-center justify-center hover:bg-blue-600 z-10"
+                >
+                  <i className="fas fa-location-arrow"></i>
+                </button>
+               
+                {/* List Button */}
+                <div className="absolute bottom-8 left-4 z-10">
+                  <Button 
+                    className="bg-white text-primary hover:bg-gray-100 shadow-lg"
+                    onClick={() => setShowMapDialog(false)}
+                  >
+                    <i className="fas fa-list mr-2"></i>
+                    Show List
+                  </Button>
                 </div>
               </div>
-            )}
-          </div>
-
-          {/* Map Controls - Fixed Position */}
-          <div className="absolute top-4 right-4 flex flex-col space-y-2 z-10">
-            <button 
-              onClick={handleZoomIn}
-              className="h-10 w-10 bg-white rounded-full shadow-md flex items-center justify-center hover:bg-gray-100"
-            >
-              <i className="fas fa-plus text-gray-600"></i>
-            </button>
-            <button 
-              onClick={handleZoomOut}
-              className="h-10 w-10 bg-white rounded-full shadow-md flex items-center justify-center hover:bg-gray-100"
-            >
-              <i className="fas fa-minus text-gray-600"></i>
-            </button>
-          </div>
-
-          {/* Current Location Button */}
-          <button 
-            onClick={handleGetCurrentLocation}
-            className="absolute bottom-28 sm:bottom-8 right-4 h-12 w-12 bg-primary text-white rounded-full shadow-lg flex items-center justify-center hover:bg-blue-600 z-10"
-          >
-            <i className="fas fa-location-arrow"></i>
-          </button>
-
-          {/* Mobile Parking List Toggle Button */}
-          <button 
-            onClick={toggleParkingList}
-            className="md:hidden absolute bottom-8 right-4 h-12 w-12 bg-white text-primary rounded-full shadow-lg flex items-center justify-center z-10"
-          >
-            <i className="fas fa-list"></i>
-          </button>
-        </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </main>
 
       {/* Mobile Bottom Nav */}
