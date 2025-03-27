@@ -171,13 +171,27 @@ export default function Map() {
         // Use the actual accuracy from the GPS as the radius of the circle
         // This helps users understand how accurate their location is
         try {
-          const accuracyCircle = window.L.circle([location.lat, location.lng], {
-            radius: Math.min(location.accuracy, 1000), // Cap at 1km for visual purposes
-            weight: 1,
-            color: '#3B82F6',
-            fillColor: '#93C5FD',
-            fillOpacity: 0.15
-          }).addTo(mapRef.current);
+          // First check if L.circle is available directly
+          if (typeof window.L.circle === 'function') {
+            const accuracyCircle = window.L.circle([location.lat, location.lng], {
+              radius: Math.min(location.accuracy, 1000), // Cap at 1km for visual purposes
+              weight: 1,
+              color: '#3B82F6',
+              fillColor: '#93C5FD',
+              fillOpacity: 0.15
+            }).addTo(mapRef.current);
+          } else if (window.L.mapquest && window.L.mapquest.circle) {
+            // Fallback to mapquest's circle if direct method isn't available
+            const accuracyCircle = window.L.mapquest.circle({
+              center: [location.lat, location.lng],
+              radius: Math.min(location.accuracy, 1000),
+              color: '#3B82F6',
+              fillColor: '#93C5FD',
+              fillOpacity: 0.15
+            }).addTo(mapRef.current);
+          } else {
+            console.warn("Circle drawing not available in this MapQuest implementation");
+          }
         } catch (err) {
           console.error("Error adding accuracy circle:", err);
         }
@@ -251,10 +265,13 @@ export default function Map() {
     } catch (error: any) {
       console.error("Error getting location:", error);
       
+      // Extract error message if available
+      const errorMessage = error.message || "May problema sa pag-access ng iyong lokasyon.";
+      
       // Show a more detailed toast message
       toast({
         title: "Hindi ma-access ang lokasyon",
-        description: "May problema sa pag-access ng iyong lokasyon. Tingnan ang Location Help para sa tulong.",
+        description: errorMessage,
         variant: "destructive",
         action: <Button variant="outline" onClick={() => setShowLocationHelpDialog(true)}>Location Help</Button>
       });
@@ -367,6 +384,8 @@ export default function Map() {
         {/* Map Dialog (Fullscreen) */}
         <Dialog open={showMapDialog} onOpenChange={setShowMapDialog}>
           <DialogContent className="max-w-full w-full h-full max-h-screen p-0 border-none bg-transparent">
+            <DialogTitle className="sr-only">EzPark Connect Map View</DialogTitle>
+            <DialogDescription className="sr-only">Interactive map to find and select parking spots</DialogDescription>
             <div className="h-screen w-full flex flex-col bg-white">
               {/* Map Header */}
               <div className="bg-primary text-white p-2 flex justify-between items-center z-20">

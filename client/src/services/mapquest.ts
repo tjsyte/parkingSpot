@@ -59,21 +59,25 @@ export const getCurrentLocation = (): Promise<LocationWithAccuracy> => {
       reject(new Error("Geolocation ay hindi sinusuportahan ng iyong browser. Subukan ang ibang browser."));
       return;
     }
-
-    // Attempt to force high accuracy by using settings and clear options
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const { latitude, longitude, accuracy } = position.coords;
-        console.log(`Location accuracy: ${accuracy} meters`);
-        
-        // Return location with accuracy information
-        resolve({
-          lat: latitude,
-          lng: longitude,
-          accuracy: accuracy
-        });
-      },
-      (error) => {
+    
+    // First try to get a precise location with high accuracy
+    // If it times out or fails, fallback to a less precise but faster method
+    let hasResolved = false;
+    let highAccuracyTimedOut = false;
+    
+    // Define error handler
+    const handleError = (error: GeolocationPositionError) => {
+      console.error("Error getting location:", error);
+      
+      // If high accuracy timed out, we're still waiting for low accuracy
+      if (error.code === error.TIMEOUT && !highAccuracyTimedOut) {
+        console.log("High accuracy location timed out, trying with low accuracy...");
+        highAccuracyTimedOut = true;
+        return; // Don't reject yet, wait for low accuracy attempt
+      }
+      
+      // If we already got a position or we're in the low accuracy attempt, handle the error
+      if (hasResolved || highAccuracyTimedOut) {
         let errorMessage = "Hindi mahanap ang iyong lokasyon. Subukan muli.";
         switch (error.code) {
           case error.PERMISSION_DENIED:
@@ -87,13 +91,52 @@ export const getCurrentLocation = (): Promise<LocationWithAccuracy> => {
             break;
         }
         reject(new Error(errorMessage));
-      },
+      }
+    };
+    
+    // Define success handler
+    const handleSuccess = (position: GeolocationPosition) => {
+      if (hasResolved) return; // Don't resolve twice
+      
+      hasResolved = true;
+      const { latitude, longitude, accuracy } = position.coords;
+      console.log(`Location accuracy: ${accuracy} meters`);
+      
+      // Return location with accuracy information
+      resolve({
+        lat: latitude,
+        lng: longitude,
+        accuracy: accuracy
+      });
+    };
+
+    // Try with high accuracy first (GPS)
+    navigator.geolocation.getCurrentPosition(
+      handleSuccess,
+      handleError,
       { 
         enableHighAccuracy: true, 
-        timeout: 15000,    // Longer timeout (15 seconds) to give more time for GPS
+        timeout: 10000,    // 10 second timeout for high accuracy
         maximumAge: 0      // Always get a fresh position
       }
     );
+    
+    // If high accuracy takes too long, try with lower accuracy as fallback
+    // This will typically use network-based location which is faster but less precise
+    setTimeout(() => {
+      if (!hasResolved) {
+        highAccuracyTimedOut = true;
+        navigator.geolocation.getCurrentPosition(
+          handleSuccess,
+          handleError,
+          { 
+            enableHighAccuracy: false, 
+            timeout: 5000,     // 5 second timeout for low accuracy
+            maximumAge: 60000  // Accept positions up to 1 minute old to speed things up
+          }
+        );
+      }
+    }, 5000); // Wait 5 seconds before trying the fallback
   });
 };
 
@@ -215,6 +258,7 @@ declare global {
     L: {
       mapquest: any;
       marker: (position: Coordinates, options?: L.MarkerOptions) => L.Marker;
+      circle: (position: [number, number], options?: any) => any;
     };
   }
 }
