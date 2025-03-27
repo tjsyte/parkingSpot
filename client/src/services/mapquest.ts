@@ -52,13 +52,25 @@ export type LocationWithAccuracy = Coordinates & {
   accuracy: number;
 };
 
+// Default location - Metro Manila, Philippines
+const DEFAULT_LOCATION: LocationWithAccuracy = {
+  lat: 14.5995, 
+  lng: 120.9842,
+  accuracy: 5000
+};
+
 // Get current location using browser's Geolocation API with accuracy information
 export const getCurrentLocation = (): Promise<LocationWithAccuracy> => {
   return new Promise((resolve, reject) => {
+    // Check if geolocation is supported
     if (!navigator.geolocation) {
-      reject(new Error("Geolocation ay hindi sinusuportahan ng iyong browser. Subukan ang ibang browser."));
+      const errorMsg = "Geolocation ay hindi sinusuportahan ng iyong browser. Subukan ang ibang browser.";
+      console.error(errorMsg);
+      reject(new Error(errorMsg));
       return;
     }
+    
+    console.log("Starting location lookup...");
     
     // First try to get a precise location with high accuracy
     // If it times out or fails, fallback to a less precise but faster method
@@ -67,7 +79,7 @@ export const getCurrentLocation = (): Promise<LocationWithAccuracy> => {
     
     // Define error handler
     const handleError = (error: GeolocationPositionError) => {
-      console.error("Error getting location:", error);
+      console.log(`Location error (${highAccuracyTimedOut ? 'low' : 'high'} accuracy attempt):`, error.code, error.message);
       
       // If high accuracy timed out, we're still waiting for low accuracy
       if (error.code === error.TIMEOUT && !highAccuracyTimedOut) {
@@ -84,7 +96,7 @@ export const getCurrentLocation = (): Promise<LocationWithAccuracy> => {
             errorMessage = "Hindi pinapayagan ang pag-access sa location. Pakibukas ang location permission sa iyong browser/device settings.";
             break;
           case error.POSITION_UNAVAILABLE:
-            errorMessage = "Hindi available ang impormasyon ng lokasyon. Subukan muli mamaya.";
+            errorMessage = "Hindi available ang impormasyon ng lokasyon. Subukan muli mamaya o i-check ang internet connection.";
             break;
           case error.TIMEOUT:
             errorMessage = "Nag-timeout ang pag-request ng lokasyon. Pakisuri ang iyong koneksyon at subukan muli.";
@@ -100,7 +112,7 @@ export const getCurrentLocation = (): Promise<LocationWithAccuracy> => {
       
       hasResolved = true;
       const { latitude, longitude, accuracy } = position.coords;
-      console.log(`Location accuracy: ${accuracy} meters`);
+      console.log(`✓ Successfully got location! Accuracy: ${accuracy.toFixed(1)} meters`);
       
       // Return location with accuracy information
       resolve({
@@ -110,13 +122,14 @@ export const getCurrentLocation = (): Promise<LocationWithAccuracy> => {
       });
     };
 
-    // Try with high accuracy first (GPS)
+    // Try first with highest possible accuracy - will use GPS on mobile devices
+    console.log("Attempting to get location with high accuracy (GPS preferred)...");
     navigator.geolocation.getCurrentPosition(
-      handleSuccess,
+      handleSuccess, 
       handleError,
       { 
         enableHighAccuracy: true, 
-        timeout: 10000,    // 10 second timeout for high accuracy
+        timeout: 15000,    // 15 second timeout for high accuracy
         maximumAge: 0      // Always get a fresh position
       }
     );
@@ -125,18 +138,19 @@ export const getCurrentLocation = (): Promise<LocationWithAccuracy> => {
     // This will typically use network-based location which is faster but less precise
     setTimeout(() => {
       if (!hasResolved) {
+        console.log("High accuracy location taking too long, trying with lower accuracy...");
         highAccuracyTimedOut = true;
         navigator.geolocation.getCurrentPosition(
           handleSuccess,
           handleError,
           { 
             enableHighAccuracy: false, 
-            timeout: 5000,     // 5 second timeout for low accuracy
-            maximumAge: 60000  // Accept positions up to 1 minute old to speed things up
+            timeout: 10000,     // 10 second timeout for low accuracy
+            maximumAge: 60000   // Accept positions up to 1 minute old to speed things up
           }
         );
       }
-    }, 5000); // Wait 5 seconds before trying the fallback
+    }, 8000); // Wait 8 seconds before trying the fallback
   });
 };
 

@@ -61,12 +61,16 @@ declare global {
         tileLayer: (type: string) => any;
         control: () => any;
         directionsLayer: (options: any) => any;
+        drawing?: {
+          circle: (options: any) => any;
+        };
         icons: {
           circle: (options: any) => any;
           marker: (options: any) => any;
         };
+        circle?: (options: any) => any;
       };
-      marker: (position: Coordinates, options?: any) => L.Marker;
+      marker: (position: Coordinates, options?: L.MarkerOptions) => L.Marker;
       circle: (position: [number, number], options?: L.CircleOptions) => any;
     };
   }

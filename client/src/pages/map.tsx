@@ -114,38 +114,53 @@ export default function Map() {
     }
   }, [showMapDialog, userLocation, parkingSpots, toast]);
 
-  // Reference to track the user marker
+  // References to track map elements
   const userMarkerRef = useRef<L.Marker | null>(null);
+  const accuracyCircleRef = useRef<any>(null);
   
   // State for location permission dialog
   const [showLocationHelpDialog, setShowLocationHelpDialog] = useState<boolean>(false);
+  // State to track if we're currently getting location
+  const [isGettingLocation, setIsGettingLocation] = useState<boolean>(false);
   
   // Handle getting current location with improved accuracy and error handling
   const handleGetCurrentLocation = async () => {
+    if (isGettingLocation) {
+      console.log("Already trying to get location, please wait...");
+      return;
+    }
+    
     try {
+      setIsGettingLocation(true);
+      
       toast({
         title: "Hinahanap ang lokasyon...",
         description: "Naglo-load ang iyong kasalukuyang lokasyon. Pakipayagan ang location sharing.",
       });
       
-      // Clear any existing user marker
-      if (userMarkerRef.current && mapRef.current) {
-        mapRef.current.removeLayer(userMarkerRef.current);
-        userMarkerRef.current = null;
+      // Clear any existing user marker and accuracy circle
+      if (mapRef.current) {
+        if (userMarkerRef.current) {
+          mapRef.current.removeLayer(userMarkerRef.current);
+          userMarkerRef.current = null;
+        }
+        
+        if (accuracyCircleRef.current) {
+          mapRef.current.removeLayer(accuracyCircleRef.current);
+          accuracyCircleRef.current = null;
+        }
       }
 
+      console.log("Requesting current location...");
       // Get current location with required high accuracy
       const location = await getCurrentLocation();
+      console.log("Location received:", location);
       
       // Store location for use in other parts of the app
       setUserLocation(location);
       
-      // Check accuracy and show appropriate message
-      const accuracyMessage = location.accuracy > 1000 
-        ? "Ang lokasyon mo ay hindi masyadong tumpak. Pakitingnan ang GPS settings."
-        : "Nakuha ang iyong lokasyon!";
-
       if (mapRef.current) {
+        console.log("Updating map view with new location");
         // Smoothly animate to the user's location with enhanced zoom
         mapRef.current.setView([location.lat, location.lng], 15, {
           animate: true,
@@ -171,29 +186,57 @@ export default function Map() {
         // Use the actual accuracy from the GPS as the radius of the circle
         // This helps users understand how accurate their location is
         try {
-          // First check if L.circle is available directly
-          if (typeof window.L.circle === 'function') {
-            const accuracyCircle = window.L.circle([location.lat, location.lng], {
-              radius: Math.min(location.accuracy, 1000), // Cap at 1km for visual purposes
-              weight: 1,
-              color: '#3B82F6',
-              fillColor: '#93C5FD',
-              fillOpacity: 0.15
-            }).addTo(mapRef.current);
-          } else if (window.L.mapquest && window.L.mapquest.circle) {
-            // Fallback to mapquest's circle if direct method isn't available
-            const accuracyCircle = window.L.mapquest.circle({
-              center: [location.lat, location.lng],
-              radius: Math.min(location.accuracy, 1000),
-              color: '#3B82F6',
-              fillColor: '#93C5FD',
-              fillOpacity: 0.15
-            }).addTo(mapRef.current);
-          } else {
-            console.warn("Circle drawing not available in this MapQuest implementation");
+          console.log("Adding accuracy circle with radius:", Math.min(location.accuracy, 1000));
+          
+          try {
+            // Try creating circle using standard Leaflet method
+            if (window.L.circle) {
+              accuracyCircleRef.current = window.L.circle([location.lat, location.lng], {
+                radius: Math.min(location.accuracy, 1000), // Cap at 1km for visual purposes
+                weight: 1,
+                color: '#3B82F6',
+                fillColor: '#93C5FD',
+                fillOpacity: 0.15
+              }).addTo(mapRef.current);
+            } 
+            // Alternative approach using MapQuest-specific features
+            else if (window.L.mapquest && window.L.mapquest.circle) {
+              accuracyCircleRef.current = window.L.mapquest.circle({
+                center: [location.lat, location.lng],
+                radius: Math.min(location.accuracy, 1000),
+                color: '#3B82F6',
+                fillColor: '#93C5FD',
+                fillOpacity: 0.15
+              }).addTo(mapRef.current);
+            } 
+            else {
+              console.warn("Circle drawing not available in this MapQuest implementation");
+            }
+          } catch (circleErr) {
+            console.error("First circle method failed:", circleErr);
+            
+            // Last resort - try MapQuest-specific method
+            try {
+              const circleOptions = {
+                center: { lat: location.lat, lng: location.lng },
+                radius: Math.min(location.accuracy, 1000),
+                strokeColor: '#3B82F6',
+                strokeOpacity: 0.8,
+                strokeWeight: 1,
+                fillColor: '#93C5FD',
+                fillOpacity: 0.15
+              };
+              
+              // Attempt different ways to add a circle
+              if (window.L.mapquest.drawing && window.L.mapquest.drawing.circle) {
+                accuracyCircleRef.current = window.L.mapquest.drawing.circle(circleOptions).addTo(mapRef.current);
+              }
+            } catch (finalErr) {
+              console.error("All circle drawing methods failed", finalErr);
+            }
           }
         } catch (err) {
-          console.error("Error adding accuracy circle:", err);
+          console.error("Error with accuracy circle:", err);
         }
         
         // Show success toast with accuracy information
@@ -278,6 +321,9 @@ export default function Map() {
       
       // Show the location help dialog
       setShowLocationHelpDialog(true);
+    } finally {
+      // Make sure we reset the loading state
+      setIsGettingLocation(false);
     }
   };
 
@@ -373,9 +419,19 @@ export default function Map() {
                 onClick={handleGetCurrentLocation}
                 variant="outline"
                 className="text-primary border-primary"
+                disabled={isGettingLocation}
               >
-                <i className="fas fa-location-arrow mr-1"></i>
-                Get My Location
+                {isGettingLocation ? (
+                  <>
+                    <i className="fas fa-circle-notch fa-spin mr-1"></i>
+                    Hinahanap...
+                  </>
+                ) : (
+                  <>
+                    <i className="fas fa-location-arrow mr-1"></i>
+                    Get My Location
+                  </>
+                )}
               </Button>
             </div>
           </div>
@@ -457,8 +513,13 @@ export default function Map() {
                         onClick={handleGetCurrentLocation}
                         className="pointer-events-auto h-14 w-14 bg-primary text-white rounded-full shadow-xl flex items-center justify-center hover:bg-blue-600 transition-all duration-300 border-2 border-white"
                         title="Get Your Current Location"
+                        disabled={isGettingLocation}
                       >
-                        <i className="fas fa-location-arrow text-xl"></i>
+                        {isGettingLocation ? (
+                          <i className="fas fa-circle-notch fa-spin text-xl"></i>
+                        ) : (
+                          <i className="fas fa-location-arrow text-xl"></i>
+                        )}
                       </button>
                     </div>
                   </div>
@@ -559,7 +620,16 @@ export default function Map() {
           
           <DialogFooter className="flex gap-2 sm:justify-between">
             <Button variant="outline" onClick={() => setShowLocationHelpDialog(false)}>Close</Button>
-            <Button onClick={handleGetCurrentLocation}>Try Again</Button>
+            <Button onClick={handleGetCurrentLocation} disabled={isGettingLocation}>
+              {isGettingLocation ? (
+                <>
+                  <i className="fas fa-circle-notch fa-spin mr-1"></i>
+                  Hinahanap...
+                </>
+              ) : (
+                <>Try Again</>
+              )}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
