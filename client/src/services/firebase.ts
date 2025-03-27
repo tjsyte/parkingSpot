@@ -24,6 +24,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const googleProvider = new GoogleAuthProvider();
+googleProvider.setCustomParameters({ prompt: "select_account" });
 
 // Auth functions
 export const signInWithGoogle = async (): Promise<UserCredential> => {
@@ -46,6 +47,22 @@ export const registerWithEmail = async (
 
 export const logoutUser = async (): Promise<void> => {
   return signOut(auth);
+};
+
+export const createUserInBackend = async (uid: string, email: string, displayName?: string) => {
+  const response = await fetch("/api/users", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ uid, email, displayName }),
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to create user in backend");
+  }
+
+  return response.json();
 };
 
 export { auth, app };

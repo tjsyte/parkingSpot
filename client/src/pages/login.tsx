@@ -34,7 +34,6 @@ const loginSchema = z.object({
 
 // Register form schema
 const registerSchema = z.object({
-  name: z.string().min(2, "Name must be at least 2 characters"),
   email: z.string().email("Please enter a valid email address"),
   password: z.string().min(8, "Password must be at least 8 characters"),
   confirmPassword: z.string().min(8, "Please confirm your password")
@@ -66,7 +65,6 @@ export default function Login() {
   const registerForm = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
-      name: "",
       email: "",
       password: "",
       confirmPassword: ""
@@ -97,23 +95,23 @@ export default function Login() {
   const handleEmailRegister = async (data: RegisterFormValues) => {
     try {
       const userCredential = await registerWithEmail(data.email, data.password);
-      
-      // We can't directly set displayName here as it's read-only
-      // We would normally use updateProfile() from Firebase but will
-      // just store the name in context for simplicity
-      
+      const { uid, email } = userCredential.user;
+
+      // Call backend to create user
+      await createUserInBackend(uid, email);
+
       setUser(userCredential.user);
       toast({
         title: "Registration successful",
         description: "Your account has been created",
-        variant: "default"
+        variant: "default",
       });
       navigate("/map");
     } catch (error: any) {
       toast({
         title: "Registration failed",
         description: error.message,
-        variant: "destructive"
+        variant: "destructive",
       });
     }
   };
@@ -130,9 +128,10 @@ export default function Login() {
       });
       navigate("/map");
     } catch (error: any) {
+      console.error("Google Sign-In Error:", error); // Add debugging
       toast({
         title: "Google login failed",
-        description: error.message,
+        description: error.message || "An unexpected error occurred.",
         variant: "destructive"
       });
     }
@@ -228,23 +227,6 @@ export default function Login() {
             // Registration Form
             <Form {...registerForm}>
               <form onSubmit={registerForm.handleSubmit(handleEmailRegister)} className="space-y-5">
-                <FormField
-                  control={registerForm.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Username</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="Username"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
                 <FormField
                   control={registerForm.control}
                   name="email"

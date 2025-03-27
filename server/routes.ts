@@ -26,6 +26,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Internal server error" });
     }
   });
+
+  // Add a new user to the database
+  app.post("/api/users", async (req, res) => {
+    try {
+      const schema = z.object({
+        uid: z.string(),
+        email: z.string().email(),
+        displayName: z.string().optional(),
+      });
+
+      const validation = schema.safeParse(req.body);
+
+      if (!validation.success) {
+        return res.status(400).json({ message: "Invalid user data" });
+      }
+
+      const { uid, email, displayName } = validation.data;
+
+      const user = await storage.createUser({ uid, email, displayName });
+      res.status(201).json(user);
+    } catch (error) {
+      console.error("Error creating user:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   // API routes for parking spots
   app.get("/api/parking-spots", async (_req, res) => {
     try {
