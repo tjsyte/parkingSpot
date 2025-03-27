@@ -66,6 +66,9 @@ var MemStorage = class {
     this.users.set(id, user);
     return user;
   }
+  async getAllUsers() {
+    return Array.from(this.users.values());
+  }
   // Parking spot methods
   async getParkingSpot(id) {
     return this.parkingSpots.get(id);
@@ -137,12 +140,6 @@ var MemStorage = class {
   }
   async removeFavorite(id) {
     this.favorites.delete(id);
-  }
-  async getFavorites(userId) {
-    return Array.from(this.favorites.values()).filter((fav) => fav.userId === userId);
-  }
-  async getHistory(userId) {
-    return Array.from(this.history.values()).filter((hist) => hist.userId === userId);
   }
   // Initialize with sample parking spots
   initializeSampleData() {
@@ -499,7 +496,10 @@ async function registerRoutes(app2) {
       const schema = z.object({
         uid: z.string(),
         email: z.string(),
-        // Removed email validation
+        username: z.string(),
+        // Added required username
+        password: z.string(),
+        // Added required password
         displayName: z.string().optional()
       });
       const validation = schema.safeParse(req.body);
@@ -507,11 +507,20 @@ async function registerRoutes(app2) {
         console.error("Validation Error:", validation.error);
         return res.status(400).json({ message: "Invalid user data", errors: validation.error.errors });
       }
-      const { uid, email, displayName } = validation.data;
-      const user = await storage.createUser({ uid, email, displayName });
+      const { uid, email, username, password, displayName } = validation.data;
+      const user = await storage.createUser({ uid, email, username, password, displayName });
       res.status(201).json(user);
     } catch (error) {
       console.error("Error creating user:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  app2.get("/api/users", async (_req, res) => {
+    try {
+      const users = await storage.getAllUsers();
+      res.json(users);
+    } catch (error) {
+      console.error("Error fetching all users:", error);
       res.status(500).json({ message: "Internal server error" });
     }
   });
@@ -728,6 +737,7 @@ async function setupVite(app2, server) {
     middlewareMode: true,
     hmr: { server },
     allowedHosts: true
+    // Update type to match ServerOptions
   };
   const vite = await createViteServer({
     ...vite_config_default,
