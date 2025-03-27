@@ -89,18 +89,7 @@ export default function Header({
             
             {/* Action Buttons */}
             <div className="flex items-center space-x-2">
-              {/* Get Location Button */}
-              {onGetLocationClick && (
-                <Button
-                  onClick={onGetLocationClick}
-                  size="icon"
-                  variant="ghost"
-                  className="h-9 w-9 rounded-full text-primary hover:bg-primary/10"
-                  title="Get My Location"
-                >
-                  <i className="fas fa-location-arrow"></i>
-                </Button>
-              )}
+              {/* Get Location Button removed as requested */}
               
               {/* Show Map Button (when in list view) */}
               {!isMapView && onShowMapClick && (

@@ -47,6 +47,14 @@ export default function Map() {
       navigate("/");
     }
   }, [isAuthenticated, navigate]);
+  
+  // Auto-detect location when map page loads
+  useEffect(() => {
+    if (isAuthenticated && !userLocation && !isGettingLocation) {
+      console.log("Auto-detecting location on page load...");
+      handleGetCurrentLocation();
+    }
+  }, [isAuthenticated]);
 
   // Initialize map when dialog opens
   useEffect(() => {
@@ -365,7 +373,6 @@ export default function Map() {
     <div className="h-screen w-full flex flex-col">
       <Header 
         userName={user?.displayName || user?.email || "User"}
-        onGetLocationClick={handleGetCurrentLocation}
         onShowMapClick={() => setShowMapDialog(true)}
         isMapView={false}
       />
@@ -411,7 +418,7 @@ export default function Map() {
                 ) : (
                   <div className="inline-flex items-center bg-yellow-50 text-yellow-700 px-3 py-1 rounded-full">
                     <i className="fas fa-exclamation-circle mr-1"></i>
-                    <span>Location not set • Click location icon in header</span>
+                    <span>Inaasikaso ang lokasyon mo • Sandali lang...</span>
                   </div>
                 )}
               </div>
@@ -428,7 +435,6 @@ export default function Map() {
               {/* Use the Header component for map view */}
               <Header 
                 userName={user?.displayName || user?.email || "User"}
-                onGetLocationClick={handleGetCurrentLocation}
                 onShowListClick={() => setShowMapDialog(false)}
                 isMapView={true}
               />
