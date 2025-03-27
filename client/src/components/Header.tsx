@@ -3,6 +3,7 @@ import { useLocation } from "wouter";
 import { logoutUser } from "@/services/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,9 +15,19 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface HeaderProps {
   userName: string;
+  onShowMapClick?: () => void;
+  onGetLocationClick?: () => void;
+  onShowListClick?: () => void;
+  isMapView?: boolean;
 }
 
-export default function Header({ userName }: HeaderProps) {
+export default function Header({ 
+  userName,
+  onShowMapClick,
+  onGetLocationClick,
+  onShowListClick,
+  isMapView = false 
+}: HeaderProps) {
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const { user, clearUser } = useAuth();
@@ -68,10 +79,55 @@ export default function Header({ userName }: HeaderProps) {
           </div>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:ml-6 md:flex md:items-center md:space-x-4">
-            <a href="#" className="text-gray-900 px-3 py-2 rounded-md text-sm font-medium border-b-2 border-primary">Map</a>
-            <a href="#" className="text-gray-500 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">Favorites</a>
-            <a href="#" className="text-gray-500 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">History</a>
+          <div className="md:ml-6 md:flex md:items-center md:space-x-4">
+            {/* Navigation Links */}
+            <div className="hidden md:flex md:space-x-4">
+              <a href="#" className="text-gray-900 px-3 py-2 rounded-md text-sm font-medium border-b-2 border-primary">Map</a>
+              <a href="#" className="text-gray-500 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">Favorites</a>
+              <a href="#" className="text-gray-500 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">History</a>
+            </div>
+            
+            {/* Action Buttons */}
+            <div className="flex items-center space-x-2">
+              {/* Get Location Button */}
+              {onGetLocationClick && (
+                <Button
+                  onClick={onGetLocationClick}
+                  size="icon"
+                  variant="ghost"
+                  className="h-9 w-9 rounded-full text-primary hover:bg-primary/10"
+                  title="Get My Location"
+                >
+                  <i className="fas fa-location-arrow"></i>
+                </Button>
+              )}
+              
+              {/* Show Map Button (when in list view) */}
+              {!isMapView && onShowMapClick && (
+                <Button
+                  onClick={onShowMapClick}
+                  size="icon"
+                  variant="ghost"
+                  className="h-9 w-9 rounded-full text-primary hover:bg-primary/10"
+                  title="Show Map"
+                >
+                  <i className="fas fa-map-marked-alt"></i>
+                </Button>
+              )}
+              
+              {/* Show List Button (when in map view) */}
+              {isMapView && onShowListClick && (
+                <Button
+                  onClick={onShowListClick}
+                  size="icon"
+                  variant="ghost"
+                  className="h-9 w-9 rounded-full text-primary hover:bg-primary/10"
+                  title="Show Parking List"
+                >
+                  <i className="fas fa-list"></i>
+                </Button>
+              )}
+            </div>
           </div>
 
           {/* Profile Dropdown */}

@@ -363,17 +363,22 @@ export default function Map() {
 
   return (
     <div className="h-screen w-full flex flex-col">
-      <Header userName={user?.displayName || user?.email || "User"} />
+      <Header 
+        userName={user?.displayName || user?.email || "User"}
+        onGetLocationClick={handleGetCurrentLocation}
+        onShowMapClick={() => setShowMapDialog(true)}
+        isMapView={false}
+      />
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col p-4 h-[calc(100%-4rem)]">
         {/* Parking Spots Component (Default View) */}
         <div className="w-full max-w-4xl mx-auto">
-          {/* Open Map Button */}
-          <div className="mb-6 flex justify-center">
+          {/* Open Map Button - now optional since it's in header */}
+          <div className="mb-6 flex justify-center md:hidden">
             <Button 
               onClick={() => setShowMapDialog(true)}
-              className="bg-primary hover:bg-blue-600 text-white py-2 px-6 rounded-lg shadow-lg flex items-center justify-center gap-2 w-full md:w-auto"
+              className="bg-primary hover:bg-blue-600 text-white py-2 px-6 rounded-lg shadow-lg flex items-center justify-center gap-2 w-full"
               size="lg"
             >
               <i className="fas fa-map-marked-alt text-lg"></i>
@@ -401,39 +406,21 @@ export default function Map() {
               />
             </div>
             
-            {/* Bottom Action Bar */}
-            <div className="p-4 border-t flex flex-col sm:flex-row gap-2 justify-between">
-              <div className="text-sm text-gray-600">
+            {/* Status Info Bar */}
+            <div className="p-3 border-t">
+              <div className="text-sm text-center">
                 {userLocation ? (
-                  <div className="flex items-center">
-                    <i className="fas fa-map-marker-alt text-primary mr-1"></i>
-                    <span>Your location is set</span>
+                  <div className="inline-flex items-center bg-green-50 text-green-700 px-3 py-1 rounded-full">
+                    <i className="fas fa-map-marker-alt mr-1"></i>
+                    <span>Your location is set • {enhancedSpots.length} spots found</span>
                   </div>
                 ) : (
-                  <div className="flex items-center">
-                    <i className="fas fa-exclamation-circle text-yellow-500 mr-1"></i>
-                    <span>Location not set</span>
+                  <div className="inline-flex items-center bg-yellow-50 text-yellow-700 px-3 py-1 rounded-full">
+                    <i className="fas fa-exclamation-circle mr-1"></i>
+                    <span>Location not set • Click location icon in header</span>
                   </div>
                 )}
               </div>
-              <Button
-                onClick={handleGetCurrentLocation}
-                variant="outline"
-                className="text-primary border-primary"
-                disabled={isGettingLocation}
-              >
-                {isGettingLocation ? (
-                  <>
-                    <i className="fas fa-circle-notch fa-spin mr-1"></i>
-                    Hinahanap...
-                  </>
-                ) : (
-                  <>
-                    <i className="fas fa-location-arrow mr-1"></i>
-                    Get My Location
-                  </>
-                )}
-              </Button>
             </div>
           </div>
         </div>
@@ -444,20 +431,13 @@ export default function Map() {
             <DialogTitle className="sr-only">EzPark Connect Map View</DialogTitle>
             <DialogDescription className="sr-only">Interactive map to find and select parking spots</DialogDescription>
             <div className="h-screen w-full flex flex-col bg-white">
-              {/* Map Header */}
-              <div className="bg-primary text-white p-2 flex justify-between items-center z-20">
-                <h2 className="text-lg font-semibold flex items-center">
-                  <i className="fas fa-map-marked-alt mr-2"></i>
-                  EzPark Connect Map
-                </h2>
-                <Button 
-                  variant="ghost" 
-                  className="h-8 w-8 p-0 text-white hover:bg-blue-600" 
-                  onClick={() => setShowMapDialog(false)}
-                >
-                  <i className="fas fa-times"></i>
-                </Button>
-              </div>
+              {/* Use the Header component for map view */}
+              <Header 
+                userName={user?.displayName || user?.email || "User"}
+                onGetLocationClick={handleGetCurrentLocation}
+                onShowListClick={() => setShowMapDialog(false)}
+                isMapView={true}
+              />
               
               {/* Map Container */}
               <div className="relative flex-1">
@@ -497,32 +477,7 @@ export default function Map() {
                       </div>
                     </div>
                     
-                    {/* Bottom Controls Row */}
-                    <div className="w-full flex justify-between items-center">
-                      {/* List Button */}
-                      <Button 
-                        className="pointer-events-auto bg-white text-primary hover:bg-gray-100 shadow-lg"
-                        onClick={() => setShowMapDialog(false)}
-                        title="Show Parking Spots List"
-                      >
-                        <i className="fas fa-list mr-2"></i>
-                        <span className="hidden sm:inline">Show List</span>
-                      </Button>
-                      
-                      {/* Current Location Button */}
-                      <button 
-                        onClick={handleGetCurrentLocation}
-                        className="pointer-events-auto h-14 w-14 bg-primary text-white rounded-full shadow-xl flex items-center justify-center hover:bg-blue-600 transition-all duration-300 border-2 border-white"
-                        title="Get Your Current Location"
-                        disabled={isGettingLocation}
-                      >
-                        {isGettingLocation ? (
-                          <i className="fas fa-circle-notch fa-spin text-xl"></i>
-                        ) : (
-                          <i className="fas fa-location-arrow text-xl"></i>
-                        )}
-                      </button>
-                    </div>
+                    {/* Bottom Controls Row removed as these functions are now in the header */}
                   </div>
                 </div>
               </div>
