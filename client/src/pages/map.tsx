@@ -67,32 +67,37 @@ export default function Map() {
               }),
               title: "Your Location"
             });
-            
-            // Process parking spots if available
-            if (parkingSpots && Array.isArray(parkingSpots) && parkingSpots.length > 0) {
-              parkingSpots.forEach((spot: ParkingSpotClient) => {
-                const isAvailable = spot.availableSpots > 0;
-                
-                const marker = addMarker(
-                  mapRef.current!,
-                  { lat: spot.latitude, lng: spot.longitude },
-                  {
-                    icon: window.L.mapquest.icons.marker({
-                      primaryColor: isAvailable ? '#10B981' : '#EF4444',
-                      secondaryColor: '#FFFFFF',
-                      symbol: 'P'
-                    }),
-                    title: spot.name
-                  }
-                );
-                
-                // Add click event to marker
-                marker.on('click', () => {
-                  setSelectedSpot(spot);
-                  setShowMapDialog(false);
-                });
+          } else {
+            // Auto-detect location if not available already
+            setTimeout(() => {
+              handleGetCurrentLocation();
+            }, 500);
+          }
+          
+          // Process parking spots if available
+          if (parkingSpots && Array.isArray(parkingSpots) && parkingSpots.length > 0) {
+            parkingSpots.forEach((spot: ParkingSpotClient) => {
+              const isAvailable = spot.availableSpots > 0;
+              
+              const marker = addMarker(
+                mapRef.current!,
+                { lat: spot.latitude, lng: spot.longitude },
+                {
+                  icon: window.L.mapquest.icons.marker({
+                    primaryColor: isAvailable ? '#10B981' : '#EF4444',
+                    secondaryColor: '#FFFFFF',
+                    symbol: 'P'
+                  }),
+                  title: spot.name
+                }
+              );
+              
+              // Add click event to marker
+              marker.on('click', () => {
+                setSelectedSpot(spot);
+                setShowMapDialog(false);
               });
-            }
+            });
           }
         } catch (error) {
           console.error("Error initializing map:", error);
@@ -403,7 +408,7 @@ export default function Map() {
             </div>
             
             {/* Bottom Action Bar */}
-            <div className="p-4 border-t flex flex-col sm:flex-row gap-2 justify-between">
+            <div className="p-4 border-t flex justify-between items-center">
               <div className="text-sm text-gray-600">
                 {userLocation ? (
                   <div className="flex items-center">
@@ -413,28 +418,21 @@ export default function Map() {
                 ) : (
                   <div className="flex items-center">
                     <i className="fas fa-exclamation-circle text-yellow-500 mr-1"></i>
-                    <span>Location not set</span>
+                    <span>Location not set - click Open Map View to detect your location</span>
                   </div>
                 )}
               </div>
-              <Button
-                onClick={handleGetCurrentLocation}
-                variant="outline"
-                className="text-primary border-primary"
-                disabled={isGettingLocation}
-              >
-                {isGettingLocation ? (
-                  <>
-                    <i className="fas fa-circle-notch fa-spin mr-1"></i>
-                    Hinahanap...
-                  </>
-                ) : (
-                  <>
-                    <i className="fas fa-location-arrow mr-1"></i>
-                    Get My Location
-                  </>
-                )}
-              </Button>
+              {!userLocation && (
+                <Button
+                  onClick={() => setShowMapDialog(true)}
+                  variant="outline"
+                  className="text-primary border-primary"
+                  size="sm"
+                >
+                  <i className="fas fa-map-marked-alt mr-1"></i>
+                  View Map
+                </Button>
+              )}
             </div>
           </div>
         </div>
