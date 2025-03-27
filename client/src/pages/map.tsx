@@ -22,6 +22,7 @@ import {
   addMarker,
   enhanceParkingSpotsWithDistance
 } from "@/services/mapquest";
+import * as L from "leaflet"; // Correct import for Leaflet
 
 // L namespace and Window interface are defined in types/mapquest.d.ts
 
@@ -413,6 +414,30 @@ export default function Map() {
         console.error("Error saving to history:", error);
       }
     }
+
+    // Add to favorites in localStorage
+    if (user?.uid) {
+      try {
+        const favoritesKey = `ezpark_favorites_${user.uid}`;
+        const favoritesData = localStorage.getItem(favoritesKey);
+        let favorites: ParkingSpotClient[] = [];
+
+        if (favoritesData) {
+          favorites = JSON.parse(favoritesData);
+        }
+
+        // Check if spot already exists in favorites
+        const existingIndex = favorites.findIndex(item => item.id === spot.id);
+
+        if (existingIndex === -1) {
+          // Add to favorites if not already present
+          favorites.push(spot);
+          localStorage.setItem(favoritesKey, JSON.stringify(favorites));
+        }
+      } catch (error) {
+        console.error("Error saving to favorites:", error);
+      }
+    }
   };
 
   // Close spot detail modal
@@ -559,10 +584,13 @@ export default function Map() {
             <i className="fas fa-map-marked-alt text-xl"></i>
             <span className="text-xs mt-1">Map</span>
           </a>
-          <a href="/favorites" className="flex flex-col items-center py-2 px-3 text-gray-500">
+          <button
+            onClick={() => navigate("/favorites")}
+            className="flex flex-col items-center py-2 px-3 text-gray-500"
+          >
             <i className="far fa-star text-xl"></i>
             <span className="text-xs mt-1">Favorites</span>
-          </a>
+          </button>
           <a href="/history" className="flex flex-col items-center py-2 px-3 text-gray-500">
             <i className="fas fa-history text-xl"></i>
             <span className="text-xs mt-1">History</span>

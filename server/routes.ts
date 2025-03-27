@@ -32,22 +32,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const schema = z.object({
         uid: z.string(),
-        email: z.string().email(),
+        email: z.string(),
+        username: z.string(), // Added required username
+        password: z.string(), // Added required password
         displayName: z.string().optional(),
       });
 
       const validation = schema.safeParse(req.body);
 
       if (!validation.success) {
-        return res.status(400).json({ message: "Invalid user data" });
+        console.error("Validation Error:", validation.error);
+        return res.status(400).json({ message: "Invalid user data", errors: validation.error.errors });
       }
 
-      const { uid, email, displayName } = validation.data;
+      const { uid, email, username, password, displayName } = validation.data;
 
-      const user = await storage.createUser({ uid, email, displayName });
+      const user = await storage.createUser({ uid, email, username, password, displayName });
       res.status(201).json(user);
     } catch (error) {
       console.error("Error creating user:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Fetch all users
+  app.get("/api/users", async (_req, res) => {
+    try {
+      const users = await storage.getAllUsers();
+      res.json(users);
+    } catch (error) {
+      console.error("Error fetching all users:", error);
       res.status(500).json({ message: "Internal server error" });
     }
   });

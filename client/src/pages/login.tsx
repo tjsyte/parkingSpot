@@ -1,45 +1,28 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { useLocation } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
-import { 
-  signInWithGoogle, 
-  loginWithEmail, 
-  registerWithEmail 
-} from "@/services/firebase";
+import { signInWithGoogle, loginWithEmail, registerWithEmail } from "@/services/firebase"; // Removed createUserInBackend
 import { useAuth } from "@/contexts/AuthContext";
-
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage
-} from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@/components/ui/checkbox";
 
-// Login form schema
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
   password: z.string().min(6, "Password must be at least 6 characters"),
   rememberMe: z.boolean().optional()
 });
 
-// Register form schema
 const registerSchema = z.object({
-  email: z.string().email("Please enter a valid email address"),
-  password: z.string().min(8, "Password must be at least 8 characters"),
-  confirmPassword: z.string().min(8, "Please confirm your password")
-}).refine(data => data.password === data.confirmPassword, {
-  message: "Passwords don't match",
-  path: ["confirmPassword"]
+  email: z.string(),
+  password: z.string(),
+  confirmPassword: z.string(),
 });
 
 type LoginFormValues = z.infer<typeof loginSchema>;
@@ -51,7 +34,6 @@ export default function Login() {
   const { toast } = useToast();
   const { setUser } = useAuth();
 
-  // Login form
   const loginForm = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
@@ -61,7 +43,6 @@ export default function Login() {
     }
   });
 
-  // Register form
   const registerForm = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
@@ -71,7 +52,6 @@ export default function Login() {
     }
   });
 
-  // Handle login with email/password
   const handleEmailLogin = async (data: LoginFormValues) => {
     try {
       const userCredential = await loginWithEmail(data.email, data.password);
@@ -91,32 +71,30 @@ export default function Login() {
     }
   };
 
-  // Handle registration with email/password
   const handleEmailRegister = async (data: RegisterFormValues) => {
     try {
+      console.log("Attempting to register with email:", data.email);
+
+      // Pass correct arguments to registerWithEmail
       const userCredential = await registerWithEmail(data.email, data.password);
       const { uid, email } = userCredential.user;
 
-      // Call backend to create user
-      await createUserInBackend(uid, email);
-
       setUser(userCredential.user);
-      toast({
-        title: "Registration successful",
-        description: "Your account has been created",
-        variant: "default",
-      });
       navigate("/map");
     } catch (error: any) {
+      console.error("Registration Error:", error);
+      const errorMessage =
+        error.message === "Invalid email format. Please provide a valid email address."
+          ? "The email address you entered is invalid. Please try again."
+          : error.message || "An unexpected error occurred. Please try again.";
       toast({
         title: "Registration failed",
-        description: error.message,
+        description: errorMessage,
         variant: "destructive",
       });
     }
   };
 
-  // Handle Google sign-in
   const handleGoogleLogin = async () => {
     try {
       const userCredential = await signInWithGoogle();
@@ -128,10 +106,14 @@ export default function Login() {
       });
       navigate("/map");
     } catch (error: any) {
-      console.error("Google Sign-In Error:", error); // Add debugging
+      console.error("Google Sign-In Error:", error);
+      const errorMessage =
+        error.code === "auth/popup-closed-by-user"
+          ? "Google sign-in was canceled. Please try again."
+          : error.message || "An unexpected error occurred.";
       toast({
         title: "Google login failed",
-        description: error.message || "An unexpected error occurred.",
+        description: errorMessage,
         variant: "destructive"
       });
     }
@@ -154,7 +136,6 @@ export default function Login() {
           </div>
 
           {isLogin ? (
-            // Login Form
             <Form {...loginForm}>
               <form onSubmit={loginForm.handleSubmit(handleEmailLogin)} className="space-y-5">
                 <FormField
@@ -167,6 +148,7 @@ export default function Login() {
                         <Input
                           placeholder="you@example.com"
                           type="email"
+                          autoComplete="email"
                           {...field}
                         />
                       </FormControl>
@@ -185,6 +167,7 @@ export default function Login() {
                         <Input
                           placeholder="••••••••"
                           type="password"
+                          autoComplete="current-password"
                           {...field}
                         />
                       </FormControl>
@@ -221,10 +204,29 @@ export default function Login() {
                 <Button type="submit" className="w-full">
                   Sign in
                 </Button>
+
+                <div className="mt-6 relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <Separator className="w-full" />
+                  </div>
+                  <div className="relative flex justify-center text-sm">
+                    <span className="px-2 bg-white text-gray-500">Sign in with</span>
+                  </div>
+                </div>
+
+                <div className="mt-6">
+                  <Button 
+                    variant="outline" 
+                    className="w-full"
+                    onClick={handleGoogleLogin}
+                  >
+                    <i className="fab fa-google text-[#4285F4] mr-2"></i>
+                    Google
+                  </Button>
+                </div>
               </form>
             </Form>
           ) : (
-            // Registration Form
             <Form {...registerForm}>
               <form onSubmit={registerForm.handleSubmit(handleEmailRegister)} className="space-y-5">
                 <FormField
@@ -237,6 +239,7 @@ export default function Login() {
                         <Input
                           placeholder="you@example.com"
                           type="email"
+                          autoComplete="email"
                           {...field}
                         />
                       </FormControl>
@@ -255,10 +258,10 @@ export default function Login() {
                         <Input
                           placeholder="••••••••"
                           type="password"
+                          autoComplete="new-password"
                           {...field}
                         />
                       </FormControl>
-                      <p className="text-xs text-gray-500">Password must be at least 8 characters long</p>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -274,6 +277,7 @@ export default function Login() {
                         <Input
                           placeholder="••••••••"
                           type="password"
+                          autoComplete="new-password"
                           {...field}
                         />
                       </FormControl>
@@ -283,34 +287,30 @@ export default function Login() {
                 />
 
                 <Button type="submit" className="w-full">
-                  Create Account
+                  Sign up
                 </Button>
+
+                <div className="mt-6 relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <Separator className="w-full" />
+                  </div>
+                  <div className="relative flex justify-center text-sm">
+                    <span className="px-2 bg-white text-gray-500">Sign up with</span>
+                  </div>
+                </div>
+
+                <div className="mt-6">
+                  <Button 
+                    variant="outline" 
+                    className="w-full"
+                    onClick={handleGoogleLogin}
+                  >
+                    <i className="fab fa-google text-[#4285F4] mr-2"></i>
+                    Google
+                  </Button>
+                </div>
               </form>
             </Form>
-          )}
-
-          {isLogin && (
-            <>
-              <div className="mt-6 relative">
-                <div className="absolute inset-0 flex items-center">
-                  <Separator className="w-full" />
-                </div>
-                <div className="relative flex justify-center text-sm">
-                  <span className="px-2 bg-white text-gray-500">Or continue with</span>
-                </div>
-              </div>
-
-              <div className="mt-6">
-                <Button 
-                  variant="outline" 
-                  className="w-full"
-                  onClick={handleGoogleLogin}
-                >
-                  <i className="fab fa-google text-[#4285F4] mr-2"></i>
-                  Google
-                </Button>
-              </div>
-            </>
           )}
 
           <p className="mt-6 text-center text-sm text-gray-600">

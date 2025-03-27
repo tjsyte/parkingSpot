@@ -87,26 +87,9 @@ export default function Header({
           <div className="md:ml-6 md:flex md:items-center md:space-x-4">
             {/* Navigation Links */}
             <div className="hidden md:flex md:space-x-4">
-              <a 
-                href="/map" 
-                className={`px-3 py-2 rounded-md text-sm font-medium ${isOnMapPage ? 'text-gray-900 border-b-2 border-primary' : 'text-gray-500 hover:text-gray-900'}`}
-              >
-                Map
-              </a>
-              <a 
-                href="/favorites" 
-                className={`px-3 py-2 rounded-md text-sm font-medium ${isOnFavoritesPage ? 'text-gray-900 border-b-2 border-primary' : 'text-gray-500 hover:text-gray-900'}`}
-              >
-                Favorites
-              </a>
-              <a 
-                href="/history" 
-                className={`px-3 py-2 rounded-md text-sm font-medium ${isOnHistoryPage ? 'text-gray-900 border-b-2 border-primary' : 'text-gray-500 hover:text-gray-900'}`}
-              >
-                History
-              </a>
+              {/* Removed Map and History */}
+              {/* Favorites icon removed */}
             </div>
-            
             {/* Action Buttons */}
             <div className="flex items-center space-x-2">
               {/* Get Location Button removed as requested */}
@@ -177,6 +160,13 @@ export default function Header({
           </div>
         </div>
       </div>
+      <nav className="sm:hidden bg-white border-t fixed bottom-0 left-0 right-0 z-10">
+        <div className="flex justify-around">
+          <button onClick={() => navigate("/favorites")} className="flex flex-col items-center py-2 px-3 text-gray-500">
+            <i className="fas fa-user text-xl"></i>
+          </button>
+        </div>
+      </nav>
     </header>
   );
 }

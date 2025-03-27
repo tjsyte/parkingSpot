@@ -15,6 +15,7 @@ export interface IStorage {
   getUserByEmail(email: string): Promise<User | undefined>;
   getUserByUid(uid: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  getAllUsers(): Promise<User[]>;
   
   // Parking spot methods
   getParkingSpot(id: number): Promise<ParkingSpot | undefined>;
@@ -103,6 +104,10 @@ export class MemStorage implements IStorage {
     };
     this.users.set(id, user);
     return user;
+  }
+
+  async getAllUsers(): Promise<User[]> {
+    return Array.from(this.users.values());
   }
 
   // Parking spot methods
@@ -194,14 +199,6 @@ export class MemStorage implements IStorage {
 
   async removeFavorite(id: number): Promise<void> {
     this.favorites.delete(id);
-  }
-
-  async getFavorites(userId: number): Promise<Favorite[]> {
-    return Array.from(this.favorites.values()).filter(fav => fav.userId === userId);
-  }
-
-  async getHistory(userId: number): Promise<ParkingHistory[]> {
-    return Array.from(this.history.values()).filter(hist => hist.userId === userId);
   }
 
   // Initialize with sample parking spots

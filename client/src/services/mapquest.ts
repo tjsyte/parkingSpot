@@ -8,16 +8,15 @@ export type Coordinates = {
 };
 
 export type DistanceMatrixResult = {
-  distance: number; // in kilometers
+  distance: number;
   formattedDistance: string;
-  duration: number; // in seconds
+  duration: number;
   formattedDuration: string;
 };
 
-// Initialize MapQuest map
 export const initializeMap = (
   elementId: string,
-  center: Coordinates = { lat: 14.5995, lng: 120.9842 }, // Default to Manila, Philippines
+  center: Coordinates = { lat: 14.5995, lng: 120.9842 },
   zoom: number = 12
 ): L.Map => {
   if (!window.L) {
@@ -32,13 +31,11 @@ export const initializeMap = (
     zoom
   });
 
-  // Add map controls
   map.addControl(window.L.mapquest.control());
 
   return map;
 };
 
-// Add a marker to the map
 export const addMarker = (
   map: L.Map,
   position: Coordinates,
@@ -47,22 +44,18 @@ export const addMarker = (
   return window.L.marker(position, options).addTo(map);
 };
 
-// Extended location type with accuracy information
 export type LocationWithAccuracy = Coordinates & {
   accuracy: number;
 };
 
-// Default location - Metro Manila, Philippines
 const DEFAULT_LOCATION: LocationWithAccuracy = {
   lat: 14.5995, 
   lng: 120.9842,
   accuracy: 5000
 };
 
-// Get current location using browser's Geolocation API with accuracy information
 export const getCurrentLocation = (): Promise<LocationWithAccuracy> => {
   return new Promise((resolve, reject) => {
-    // Check if geolocation is supported
     if (!navigator.geolocation) {
       const errorMsg = "Geolocation ay hindi sinusuportahan ng iyong browser. Subukan ang ibang browser.";
       console.error(errorMsg);
@@ -70,25 +63,18 @@ export const getCurrentLocation = (): Promise<LocationWithAccuracy> => {
       return;
     }
     
-    console.log("Starting location lookup...");
-    
-    // First try to get a precise location with high accuracy
-    // If it times out or fails, fallback to a less precise but faster method
     let hasResolved = false;
     let highAccuracyTimedOut = false;
     
-    // Define error handler
     const handleError = (error: GeolocationPositionError) => {
       console.log(`Location error (${highAccuracyTimedOut ? 'low' : 'high'} accuracy attempt):`, error.code, error.message);
       
-      // If high accuracy timed out, we're still waiting for low accuracy
       if (error.code === error.TIMEOUT && !highAccuracyTimedOut) {
         console.log("High accuracy location timed out, trying with low accuracy...");
         highAccuracyTimedOut = true;
-        return; // Don't reject yet, wait for low accuracy attempt
+        return;
       }
       
-      // If we already got a position or we're in the low accuracy attempt, handle the error
       if (hasResolved || highAccuracyTimedOut) {
         let errorMessage = "Hindi mahanap ang iyong lokasyon. Subukan muli.";
         switch (error.code) {
@@ -106,15 +92,13 @@ export const getCurrentLocation = (): Promise<LocationWithAccuracy> => {
       }
     };
     
-    // Define success handler
     const handleSuccess = (position: GeolocationPosition) => {
-      if (hasResolved) return; // Don't resolve twice
+      if (hasResolved) return;
       
       hasResolved = true;
       const { latitude, longitude, accuracy } = position.coords;
       console.log(`✓ Successfully got location! Accuracy: ${accuracy.toFixed(1)} meters`);
       
-      // Return location with accuracy information
       resolve({
         lat: latitude,
         lng: longitude,
@@ -122,20 +106,17 @@ export const getCurrentLocation = (): Promise<LocationWithAccuracy> => {
       });
     };
 
-    // Try first with highest possible accuracy - will use GPS on mobile devices
     console.log("Attempting to get location with high accuracy (GPS preferred)...");
     navigator.geolocation.getCurrentPosition(
       handleSuccess, 
       handleError,
       { 
         enableHighAccuracy: true, 
-        timeout: 15000,    // 15 second timeout for high accuracy
-        maximumAge: 0      // Always get a fresh position
+        timeout: 15000,
+        maximumAge: 0
       }
     );
     
-    // If high accuracy takes too long, try with lower accuracy as fallback
-    // This will typically use network-based location which is faster but less precise
     setTimeout(() => {
       if (!hasResolved) {
         console.log("High accuracy location taking too long, trying with lower accuracy...");
@@ -145,16 +126,15 @@ export const getCurrentLocation = (): Promise<LocationWithAccuracy> => {
           handleError,
           { 
             enableHighAccuracy: false, 
-            timeout: 10000,     // 10 second timeout for low accuracy
-            maximumAge: 60000   // Accept positions up to 1 minute old to speed things up
+            timeout: 10000,
+            maximumAge: 60000
           }
         );
       }
-    }, 8000); // Wait 8 seconds before trying the fallback
+    }, 8000);
   });
 };
 
-// Calculate distance and time between two points
 export const calculateDistanceMatrix = async (
   origin: Coordinates,
   destination: Coordinates
@@ -173,7 +153,7 @@ export const calculateDistanceMatrix = async (
       ],
       options: {
         allToAll: false,
-        unit: 'k' // kilometers
+        unit: 'k'
       }
     })
   });
@@ -184,11 +164,9 @@ export const calculateDistanceMatrix = async (
 
   const data = await response.json();
   
-  // MapQuest returns distance in the requested unit (kilometers)
   const distance = data.distance[1];
   const formattedDistance = `${distance.toFixed(1)} km`;
   
-  // Time is in seconds
   const duration = data.time[1];
   const minutes = Math.ceil(duration / 60);
   const formattedDuration = `${minutes} min`;
@@ -201,7 +179,6 @@ export const calculateDistanceMatrix = async (
   };
 };
 
-// Get directions between two points
 export const getDirections = async (
   origin: Coordinates,
   destination: Coordinates
@@ -237,7 +214,6 @@ export const getDirections = async (
   });
 };
 
-// Enhance parking spots with distance and duration from current location
 export const enhanceParkingSpotsWithDistance = async (
   spots: ParkingSpotClient[],
   userLocation: Coordinates
@@ -279,7 +255,6 @@ export const enhanceParkingSpotsWithDistance = async (
     
     console.log("All spots processed. Sorting by distance...");
     
-    // Sort by distance
     const sortedSpots = enhancedSpots.sort((a, b) => (a.distance || 999) - (b.distance || 999));
     console.log("Spots sorted. Returning", sortedSpots.length, "enhanced spots");
     return sortedSpots;
@@ -289,7 +264,6 @@ export const enhanceParkingSpotsWithDistance = async (
   }
 };
 
-// Add MapQuest type definitions
 declare global {
   interface Window {
     L: {

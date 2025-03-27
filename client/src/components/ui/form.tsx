@@ -103,9 +103,9 @@ FormLabel.displayName = "FormLabel"
 
 const FormControl = React.forwardRef<
   React.ElementRef<typeof Slot>,
-  React.ComponentPropsWithoutRef<typeof Slot>
->(({ ...props }, ref) => {
-  const { error, formItemId, formDescriptionId, formMessageId } = useFormField()
+  React.ComponentPropsWithoutRef<typeof Slot> & { autocomplete?: string }
+>(({ autocomplete, ...props }, ref) => {
+  const { error, formItemId, formDescriptionId, formMessageId, name } = useFormField()
 
   return (
     <Slot
@@ -117,7 +117,7 @@ const FormControl = React.forwardRef<
           : `${formDescriptionId} ${formMessageId}`
       }
       aria-invalid={!!error}
-      {...props} // Ensure props are forwarded correctly
+      {...props} // Spread props here, including autocomplete
     />
   )
 })

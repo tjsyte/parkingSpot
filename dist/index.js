@@ -498,12 +498,14 @@ async function registerRoutes(app2) {
     try {
       const schema = z.object({
         uid: z.string(),
-        email: z.string().email(),
+        email: z.string(),
+        // Removed email validation
         displayName: z.string().optional()
       });
       const validation = schema.safeParse(req.body);
       if (!validation.success) {
-        return res.status(400).json({ message: "Invalid user data" });
+        console.error("Validation Error:", validation.error);
+        return res.status(400).json({ message: "Invalid user data", errors: validation.error.errors });
       }
       const { uid, email, displayName } = validation.data;
       const user = await storage.createUser({ uid, email, displayName });
