@@ -399,10 +399,10 @@ export default function Map() {
             
             <div className="h-[calc(100vh-16rem)] overflow-y-auto">
               <ParkingSpotList 
-                spots={enhancedSpots}
+                spots={enhancedSpots.length > 0 ? enhancedSpots : (parkingSpots && Array.isArray(parkingSpots) ? parkingSpots : [])}
                 showList={true}
                 onSpotSelect={handleSpotSelect}
-                isLoading={isLoading || !userLocation}
+                isLoading={isLoading}
                 userLocation={userLocation}
               />
             </div>
@@ -416,9 +416,9 @@ export default function Map() {
                     <span>Your location is set • {enhancedSpots.length} spots found</span>
                   </div>
                 ) : (
-                  <div className="inline-flex items-center bg-yellow-50 text-yellow-700 px-3 py-1 rounded-full">
-                    <i className="fas fa-exclamation-circle mr-1"></i>
-                    <span>Inaasikaso ang lokasyon mo • Sandali lang...</span>
+                  <div className="inline-flex items-center bg-blue-50 text-blue-700 px-3 py-1 rounded-full">
+                    <i className="fas fa-info-circle mr-1"></i>
+                    <span>Ipinapakita ang lahat ng parking spots • {(parkingSpots && Array.isArray(parkingSpots) ? parkingSpots.length : 0)} spots</span>
                   </div>
                 )}
               </div>

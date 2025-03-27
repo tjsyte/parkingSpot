@@ -33,11 +33,6 @@ export default function ParkingSpotList({
           <div className="flex justify-center items-center h-40">
             <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div>
           </div>
-        ) : !userLocation ? (
-          <div className="flex flex-col items-center justify-center h-40 text-center">
-            <i className="fas fa-location-arrow text-4xl text-gray-300 mb-4"></i>
-            <p className="text-gray-500">Click the location button to find parking spots near you</p>
-          </div>
         ) : sortedSpots.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-40 text-center">
             <i className="fas fa-parking text-4xl text-gray-300 mb-4"></i>
