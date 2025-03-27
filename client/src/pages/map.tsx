@@ -413,7 +413,7 @@ export default function Map() {
                 {userLocation ? (
                   <div className="inline-flex items-center bg-green-50 text-green-700 px-3 py-1 rounded-full">
                     <i className="fas fa-map-marker-alt mr-1"></i>
-                    <span>Your location is set • {enhancedSpots.length} spots found</span>
+                    <span>Your location is set • {Array.isArray(parkingSpots) ? parkingSpots.length : 0} spots found</span>
                   </div>
                 ) : (
                   <div className="inline-flex items-center bg-blue-50 text-blue-700 px-3 py-1 rounded-full">
