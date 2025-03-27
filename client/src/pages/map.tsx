@@ -386,15 +386,9 @@ export default function Map() {
             </Button>
           </div>
 
-          {/* Parking Spots Card with Title */}
+          {/* Parking Spots Card */}
           <div className="bg-white rounded-lg shadow-md overflow-hidden">
-            <div className="p-4 bg-primary text-white">
-              <h2 className="text-xl font-semibold flex items-center">
-                <i className="fas fa-parking mr-2"></i>
-                Available Parking Spots
-              </h2>
-              <p className="text-sm opacity-90 mt-1">Find parking spots near you</p>
-            </div>
+            {/* Title section removed as requested */}
             
             <div className="h-[calc(100vh-16rem)] overflow-y-auto">
               <ParkingSpotList 
