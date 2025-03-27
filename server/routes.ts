@@ -5,6 +5,27 @@ import { z } from "zod";
 import { parkingSpotClientSchema } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // API routes for users
+  app.get("/api/users/uid/:uid", async (req, res) => {
+    try {
+      const uid = req.params.uid;
+      
+      if (!uid) {
+        return res.status(400).json({ message: "Missing Firebase UID" });
+      }
+      
+      const user = await storage.getUserByUid(uid);
+      
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      res.json(user);
+    } catch (error) {
+      console.error("Error fetching user by UID:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
   // API routes for parking spots
   app.get("/api/parking-spots", async (_req, res) => {
     try {

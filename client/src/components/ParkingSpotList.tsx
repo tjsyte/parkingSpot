@@ -9,6 +9,7 @@ interface ParkingSpotListProps {
   onSpotSelect: (spot: ParkingSpotClient) => void;
   isLoading: boolean;
   userLocation: Coordinates | null;
+  emptyMessage?: string;
 }
 
 export default function ParkingSpotList({ 
@@ -16,7 +17,8 @@ export default function ParkingSpotList({
   showList, 
   onSpotSelect, 
   isLoading,
-  userLocation
+  userLocation,
+  emptyMessage = "No parking spots found nearby"
 }: ParkingSpotListProps) {
   // Sort spots by distance automatically
   const sortedSpots = [...spots].sort((a, b) => {
@@ -36,7 +38,7 @@ export default function ParkingSpotList({
         ) : sortedSpots.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-40 text-center">
             <i className="fas fa-parking text-4xl text-gray-300 mb-4"></i>
-            <p className="text-gray-500">No parking spots found nearby</p>
+            <p className="text-gray-500">{emptyMessage}</p>
           </div>
         ) : (
           sortedSpots.map(spot => (

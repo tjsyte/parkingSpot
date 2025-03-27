@@ -299,6 +299,39 @@ export default function Map() {
               if (showMapDialog) {
                 setShowMapDialog(false);
               }
+              
+              // Add to history in localStorage
+              if (user?.uid) {
+                try {
+                  const historyKey = `ezpark_history_${user.uid}`;
+                  const historyData = localStorage.getItem(historyKey);
+                  let history: ParkingSpotClient[] = [];
+                  
+                  if (historyData) {
+                    history = JSON.parse(historyData);
+                  }
+                  
+                  // Check if spot already exists in history
+                  const existingIndex = history.findIndex(item => item.id === spot.id);
+                  
+                  if (existingIndex >= 0) {
+                    // Remove it so we can put it at the top (most recent)
+                    history.splice(existingIndex, 1);
+                  }
+                  
+                  // Add to beginning of array (most recent)
+                  history.unshift(spot);
+                  
+                  // Limit history to 20 items
+                  if (history.length > 20) {
+                    history = history.slice(0, 20);
+                  }
+                  
+                  localStorage.setItem(historyKey, JSON.stringify(history));
+                } catch (error) {
+                  console.error("Error saving to history:", error);
+                }
+              }
             });
             
             // Add popup with basic info
@@ -346,6 +379,39 @@ export default function Map() {
     setSelectedSpot(spot);
     if (mapRef.current) {
       mapRef.current.setView([spot.latitude, spot.longitude], 15);
+    }
+    
+    // Add to history in localStorage
+    if (user?.uid) {
+      try {
+        const historyKey = `ezpark_history_${user.uid}`;
+        const historyData = localStorage.getItem(historyKey);
+        let history: ParkingSpotClient[] = [];
+        
+        if (historyData) {
+          history = JSON.parse(historyData);
+        }
+        
+        // Check if spot already exists in history
+        const existingIndex = history.findIndex(item => item.id === spot.id);
+        
+        if (existingIndex >= 0) {
+          // Remove it so we can put it at the top (most recent)
+          history.splice(existingIndex, 1);
+        }
+        
+        // Add to beginning of array (most recent)
+        history.unshift(spot);
+        
+        // Limit history to 20 items
+        if (history.length > 20) {
+          history = history.slice(0, 20);
+        }
+        
+        localStorage.setItem(historyKey, JSON.stringify(history));
+      } catch (error) {
+        console.error("Error saving to history:", error);
+      }
     }
   };
 
@@ -489,22 +555,22 @@ export default function Map() {
       {/* Mobile Bottom Nav */}
       <nav className="sm:hidden bg-white border-t fixed bottom-0 left-0 right-0 z-10">
         <div className="flex justify-around">
-          <a href="#" className="flex flex-col items-center py-2 px-3 text-primary">
+          <a href="/map" className="flex flex-col items-center py-2 px-3 text-primary">
             <i className="fas fa-map-marked-alt text-xl"></i>
             <span className="text-xs mt-1">Map</span>
           </a>
-          <a href="#" className="flex flex-col items-center py-2 px-3 text-gray-500">
+          <a href="/favorites" className="flex flex-col items-center py-2 px-3 text-gray-500">
             <i className="far fa-star text-xl"></i>
             <span className="text-xs mt-1">Favorites</span>
           </a>
-          <a href="#" className="flex flex-col items-center py-2 px-3 text-gray-500">
+          <a href="/history" className="flex flex-col items-center py-2 px-3 text-gray-500">
             <i className="fas fa-history text-xl"></i>
             <span className="text-xs mt-1">History</span>
           </a>
-          <a href="#" className="flex flex-col items-center py-2 px-3 text-gray-500">
+          <button onClick={() => {}} className="flex flex-col items-center py-2 px-3 text-gray-500">
             <i className="fas fa-user text-xl"></i>
             <span className="text-xs mt-1">Profile</span>
-          </a>
+          </button>
         </div>
       </nav>
 

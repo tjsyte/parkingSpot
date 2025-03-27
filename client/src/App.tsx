@@ -5,6 +5,8 @@ import { Toaster } from "@/components/ui/toaster";
 import NotFound from "@/pages/not-found";
 import Login from "@/pages/login";
 import Map from "@/pages/map";
+import Favorites from "@/pages/favorites";
+import History from "@/pages/history";
 import { AuthProvider } from "./contexts/AuthContext";
 import { useEffect } from "react";
 
@@ -12,7 +14,10 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={Login} />
+      <Route path="/login" component={Login} />
       <Route path="/map" component={Map} />
+      <Route path="/favorites" component={Favorites} />
+      <Route path="/history" component={History} />
       <Route component={NotFound} />
     </Switch>
   );

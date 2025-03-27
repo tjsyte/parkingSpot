@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useLocation } from "wouter";
+import { useLocation, useRoute } from "wouter";
 import { logoutUser } from "@/services/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -31,6 +31,11 @@ export default function Header({
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const { user, clearUser } = useAuth();
+  
+  // Route detection for active menu highlighting
+  const [isOnMapPage] = useRoute("/map");
+  const [isOnFavoritesPage] = useRoute("/favorites");
+  const [isOnHistoryPage] = useRoute("/history");
   
   // Handle logout
   const handleLogout = async () => {
@@ -82,9 +87,24 @@ export default function Header({
           <div className="md:ml-6 md:flex md:items-center md:space-x-4">
             {/* Navigation Links */}
             <div className="hidden md:flex md:space-x-4">
-              <a href="#" className="text-gray-900 px-3 py-2 rounded-md text-sm font-medium border-b-2 border-primary">Map</a>
-              <a href="#" className="text-gray-500 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">Favorites</a>
-              <a href="#" className="text-gray-500 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">History</a>
+              <a 
+                href="/map" 
+                className={`px-3 py-2 rounded-md text-sm font-medium ${isOnMapPage ? 'text-gray-900 border-b-2 border-primary' : 'text-gray-500 hover:text-gray-900'}`}
+              >
+                Map
+              </a>
+              <a 
+                href="/favorites" 
+                className={`px-3 py-2 rounded-md text-sm font-medium ${isOnFavoritesPage ? 'text-gray-900 border-b-2 border-primary' : 'text-gray-500 hover:text-gray-900'}`}
+              >
+                Favorites
+              </a>
+              <a 
+                href="/history" 
+                className={`px-3 py-2 rounded-md text-sm font-medium ${isOnHistoryPage ? 'text-gray-900 border-b-2 border-primary' : 'text-gray-500 hover:text-gray-900'}`}
+              >
+                History
+              </a>
             </div>
             
             {/* Action Buttons */}
@@ -97,10 +117,10 @@ export default function Header({
                   onClick={onShowMapClick}
                   size="icon"
                   variant="ghost"
-                  className="h-9 w-9 rounded-full text-primary hover:bg-primary/10"
+                  className="h-10 w-10 rounded-full text-primary hover:bg-primary/10"
                   title="Show Map"
                 >
-                  <i className="fas fa-map-marked-alt"></i>
+                  <i className="fas fa-map-marked-alt text-lg"></i>
                 </Button>
               )}
               
@@ -110,10 +130,10 @@ export default function Header({
                   onClick={onShowListClick}
                   size="icon"
                   variant="ghost"
-                  className="h-9 w-9 rounded-full text-primary hover:bg-primary/10"
+                  className="h-10 w-10 rounded-full text-primary hover:bg-primary/10"
                   title="Show Parking List"
                 >
-                  <i className="fas fa-list"></i>
+                  <i className="fas fa-list text-lg"></i>
                 </Button>
               )}
             </div>
