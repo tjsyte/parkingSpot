@@ -13,7 +13,7 @@ interface ParkingSpotListProps {
 }
 
 export default function ParkingSpotList({ 
-  spots, 
+  spots = [], // Default to an empty array if spots is null/undefined
   showList, 
   onSpotSelect, 
   isLoading,

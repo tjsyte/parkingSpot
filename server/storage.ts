@@ -92,7 +92,15 @@ export class MemStorage implements IStorage {
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = this.currentUserId++;
-    const user: User = { ...insertUser, id };
+    const user: User = { 
+      ...insertUser, 
+      id,
+      createdAt: new Date(),
+      uid: insertUser.uid || null,
+      displayName: insertUser.displayName || null,
+      photoURL: insertUser.photoURL || null,
+      provider: insertUser.provider || null
+    };
     this.users.set(id, user);
     return user;
   }
@@ -115,7 +123,19 @@ export class MemStorage implements IStorage {
 
   async createParkingSpot(insertSpot: InsertParkingSpot): Promise<ParkingSpot> {
     const id = this.currentParkingSpotId++;
-    const spot: ParkingSpot = { ...insertSpot, id };
+    const spot: ParkingSpot = { 
+      ...insertSpot, 
+      id,
+      pricePerHour: insertSpot.pricePerHour || null,
+      currency: insertSpot.currency || null,
+      isOpen24Hours: insertSpot.isOpen24Hours || null,
+      openingTime: insertSpot.openingTime || null,
+      closingTime: insertSpot.closingTime || null,
+      hasSecurityGuard: insertSpot.hasSecurityGuard || null,
+      hasCardPayment: insertSpot.hasCardPayment || null,
+      hasAccessibleParking: insertSpot.hasAccessibleParking || null,
+      hasEvCharging: insertSpot.hasEvCharging || null
+    };
     this.parkingSpots.set(id, spot);
     return spot;
   }
@@ -174,6 +194,14 @@ export class MemStorage implements IStorage {
 
   async removeFavorite(id: number): Promise<void> {
     this.favorites.delete(id);
+  }
+
+  async getFavorites(userId: number): Promise<Favorite[]> {
+    return Array.from(this.favorites.values()).filter(fav => fav.userId === userId);
+  }
+
+  async getHistory(userId: number): Promise<ParkingHistory[]> {
+    return Array.from(this.history.values()).filter(hist => hist.userId === userId);
   }
 
   // Initialize with sample parking spots
@@ -492,7 +520,19 @@ export class MemStorage implements IStorage {
     // Add all parking spots to the map
     sampleSpots.forEach(spot => {
       const id = this.currentParkingSpotId++;
-      this.parkingSpots.set(id, { ...spot, id });
+      this.parkingSpots.set(id, { 
+        ...spot, 
+        id,
+        pricePerHour: spot.pricePerHour || null,
+        currency: spot.currency || null,
+        isOpen24Hours: spot.isOpen24Hours || null,
+        openingTime: spot.openingTime || null,
+        closingTime: spot.closingTime || null,
+        hasSecurityGuard: spot.hasSecurityGuard || null,
+        hasCardPayment: spot.hasCardPayment || null,
+        hasAccessibleParking: spot.hasAccessibleParking || null,
+        hasEvCharging: spot.hasEvCharging || null
+      });
     });
   }
 }

@@ -12,11 +12,12 @@ import {
 
 // Firebase configuration using environment variables
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: `${import.meta.env.VITE_FIREBASE_PROJECT_ID}.firebaseapp.com`,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: `${import.meta.env.VITE_FIREBASE_PROJECT_ID}.appspot.com`,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID
+  apiKey: "AIzaSyANdTHShC_C_7eF8Lr3CdARGvfJlZJ9pWw",
+  authDomain: "parking-252f9.firebaseapp.com",
+  projectId: "parking-252f9",
+  storageBucket: "parking-252f9.appspot.com",
+  messagingSenderId: "296089790099",
+  appId: "1:296089790099:web:f4a7b6cffb1ff6c0f3cf66",
 };
 
 // Initialize Firebase
