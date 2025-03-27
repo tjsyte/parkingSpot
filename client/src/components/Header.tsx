@@ -58,8 +58,12 @@ export default function Header({ userName }: HeaderProps) {
           {/* Logo and Title */}
           <div className="flex items-center">
             <div className="flex-shrink-0 flex items-center">
-              <i className="fas fa-parking text-primary text-2xl"></i>
-              <h1 className="ml-2 text-xl font-bold text-gray-800">ParkSpot</h1>
+              <img 
+                src="/assets/ezpark-logo.png" 
+                alt="EzPark Connect Logo" 
+                className="h-10 w-auto"
+              />
+              <h1 className="ml-2 text-xl font-bold text-gray-800">EzPark Connect</h1>
             </div>
           </div>
 

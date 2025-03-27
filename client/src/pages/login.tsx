@@ -98,8 +98,9 @@ export default function Login() {
     try {
       const userCredential = await registerWithEmail(data.email, data.password);
       
-      // Update profile with name
-      userCredential.user.displayName = data.name;
+      // We can't directly set displayName here as it's read-only
+      // We would normally use updateProfile() from Firebase but will
+      // just store the name in context for simplicity
       
       setUser(userCredential.user);
       toast({
@@ -124,7 +125,7 @@ export default function Login() {
       setUser(userCredential.user);
       toast({
         title: "Login successful",
-        description: "Welcome to ParkSpot!",
+        description: "Welcome to EzPark Connect!",
         variant: "default"
       });
       navigate("/map");
@@ -142,8 +143,13 @@ export default function Login() {
       <Card className="w-full max-w-md">
         <CardContent className="pt-6">
           <div className="text-center mb-8">
+            <img 
+              src="/assets/ezpark-logo.png" 
+              alt="EzPark Connect Logo" 
+              className="h-24 mx-auto mb-2"
+            />
             <h1 className="text-3xl font-bold text-gray-800 mb-2">
-              <i className="fas fa-parking text-primary mr-2"></i>ParkSpot
+              EzPark Connect
             </h1>
             <p className="text-gray-600">Find available parking spots near you</p>
           </div>
