@@ -17,40 +17,7 @@ import {
   enhanceParkingSpotsWithDistance
 } from "@/services/mapquest";
 
-// Define Leaflet namespace for TypeScript
-declare namespace L {
-  interface Map {
-    setView: (center: [number, number], zoom: number) => any;
-    remove: () => void;
-    zoomIn: () => void;
-    zoomOut: () => void;
-  }
-  
-  interface Marker {
-    on: (event: string, handler: Function) => void;
-  }
-  
-  interface MarkerOptions {
-    icon?: any;
-    title?: string;
-  }
-}
-
-// Define window.L for the MapQuest API
-declare global {
-  interface Window {
-    L: {
-      Map: any;
-      mapquest: {
-        icons: {
-          circle: (options: any) => any;
-          marker: (options: any) => any;
-        }
-      };
-      marker: (position: Coordinates, options?: any) => L.Marker;
-    }
-  }
-}
+// L namespace and Window interface are defined in types/mapquest.d.ts
 
 export default function Map() {
   const [, navigate] = useLocation();
@@ -141,34 +108,71 @@ export default function Map() {
     }
   }, [showMapDialog, userLocation, parkingSpots, toast]);
 
+  // Reference to track the user marker
+  const userMarkerRef = useRef<L.Marker | null>(null);
+  
   // Handle getting current location
   const handleGetCurrentLocation = async () => {
     try {
       toast({
-        title: "Getting location",
-        description: "Finding your current location...",
+        title: "Hinahanap ang lokasyon...",
+        description: "Naglo-load ang iyong kasalukuyang lokasyon...",
       });
+      
+      // Clear any existing user marker
+      if (userMarkerRef.current && mapRef.current) {
+        mapRef.current.removeLayer(userMarkerRef.current);
+        userMarkerRef.current = null;
+      }
 
+      // Get current location with high accuracy
       const location = await getCurrentLocation();
       setUserLocation(location);
 
       if (mapRef.current) {
-        mapRef.current.setView([location.lat, location.lng], 14);
-        
-        // Add user marker
-        addMarker(mapRef.current, location, {
-          icon: window.L.mapquest.icons.circle({
-            primaryColor: '#3B82F6'
-          }),
-          title: "Your Location"
+        // Smoothly animate to the user's location with enhanced zoom
+        mapRef.current.setView([location.lat, location.lng], 15, {
+          animate: true,
+          duration: 1.0
         });
-
+        
+        // Create a pulsing effect for user location marker
+        const pulsingIcon = window.L.mapquest.icons.circle({
+          primaryColor: '#3B82F6',
+          secondaryColor: '#60A5FA',
+          size: 15,
+          shadowSize: 50,
+          shadowAnchor: [5, 5]
+        });
+        
+        // Add user marker and store reference
+        userMarkerRef.current = addMarker(mapRef.current, location, {
+          icon: pulsingIcon,
+          title: "Iyong Lokasyon",
+          zIndexOffset: 1000 // Keep user marker on top
+        });
+        
+        // Add a visible circle to show accuracy
+        const accuracyCircle = window.L.circle([location.lat, location.lng], {
+          radius: 50, // approximate accuracy in meters
+          weight: 1,
+          color: '#3B82F6',
+          fillColor: '#93C5FD',
+          fillOpacity: 0.15
+        }).addTo(mapRef.current);
+        
         // Process parking spots if available
         if (parkingSpots && Array.isArray(parkingSpots) && parkingSpots.length > 0) {
+          // Show loading toast for spots
+          toast({
+            title: "Naghahanap ng parking spots...",
+            description: "Kinakalkula ang distansya sa mga parking spot...",
+          });
+          
           const enhanced = await enhanceParkingSpotsWithDistance(parkingSpots as ParkingSpotClient[], location);
           setEnhancedSpots(enhanced);
 
-          // Add markers for parking spots
+          // Clear existing markers and add new ones
           enhanced.forEach(spot => {
             const isAvailable = spot.availableSpots > 0;
             
@@ -185,15 +189,29 @@ export default function Map() {
               }
             );
 
-            // Add click event to marker
+            // Add click event to marker with enhanced info
             marker.on('click', () => {
               setSelectedSpot(spot);
+              
+              // If in map dialog, close it to show spot details
+              if (showMapDialog) {
+                setShowMapDialog(false);
+              }
             });
+            
+            // Add popup with basic info
+            marker.bindPopup(`
+              <div class="text-center">
+                <strong>${spot.name}</strong><br/>
+                <span class="text-sm">${spot.availableSpots} slots available</span><br/>
+                <span class="text-xs">${spot.distance?.toFixed(1) || '?'} km away</span>
+              </div>
+            `);
           });
 
           toast({
-            title: "Spots Found",
-            description: `Found ${enhanced.length} parking spots near you`,
+            title: "Nakakita ng Parking Spots!",
+            description: `Nakakita ng ${enhanced.length} parking spots malapit sa iyo`,
             variant: "default"
           });
         }
@@ -201,8 +219,8 @@ export default function Map() {
     } catch (error: any) {
       console.error("Error getting location:", error);
       toast({
-        title: "Location Error",
-        description: error.message || "Failed to get your location",
+        title: "May error sa lokasyon",
+        description: error.message || "Hindi makuha ang iyong lokasyon",
         variant: "destructive"
       });
     }
@@ -341,39 +359,52 @@ export default function Map() {
                   )}
                 </div>
 
-                {/* Map Controls */}
-                <div className="absolute top-4 right-4 flex flex-col space-y-2 z-10">
-                  <button 
-                    onClick={handleZoomIn}
-                    className="h-10 w-10 bg-white rounded-full shadow-md flex items-center justify-center hover:bg-gray-100"
-                  >
-                    <i className="fas fa-plus text-gray-600"></i>
-                  </button>
-                  <button 
-                    onClick={handleZoomOut}
-                    className="h-10 w-10 bg-white rounded-full shadow-md flex items-center justify-center hover:bg-gray-100"
-                  >
-                    <i className="fas fa-minus text-gray-600"></i>
-                  </button>
-                </div>
-
-                {/* Current Location Button */}
-                <button 
-                  onClick={handleGetCurrentLocation}
-                  className="absolute bottom-8 right-4 h-12 w-12 bg-primary text-white rounded-full shadow-lg flex items-center justify-center hover:bg-blue-600 z-10"
-                >
-                  <i className="fas fa-location-arrow"></i>
-                </button>
-               
-                {/* List Button */}
-                <div className="absolute bottom-8 left-4 z-10">
-                  <Button 
-                    className="bg-white text-primary hover:bg-gray-100 shadow-lg"
-                    onClick={() => setShowMapDialog(false)}
-                  >
-                    <i className="fas fa-list mr-2"></i>
-                    Show List
-                  </Button>
+                {/* Floating Controls Container */}
+                <div className="absolute inset-0 pointer-events-none">
+                  <div className="h-full w-full flex flex-col justify-between p-4">
+                    {/* Top Controls Row */}
+                    <div className="w-full flex justify-end">
+                      {/* Map Controls */}
+                      <div className="pointer-events-auto flex flex-col space-y-2 bg-white bg-opacity-80 p-2 rounded-lg shadow-lg">
+                        <button 
+                          onClick={handleZoomIn}
+                          className="h-10 w-10 bg-white rounded-full shadow-md flex items-center justify-center hover:bg-gray-100"
+                          title="Zoom In"
+                        >
+                          <i className="fas fa-plus text-gray-600"></i>
+                        </button>
+                        <button 
+                          onClick={handleZoomOut}
+                          className="h-10 w-10 bg-white rounded-full shadow-md flex items-center justify-center hover:bg-gray-100"
+                          title="Zoom Out"
+                        >
+                          <i className="fas fa-minus text-gray-600"></i>
+                        </button>
+                      </div>
+                    </div>
+                    
+                    {/* Bottom Controls Row */}
+                    <div className="w-full flex justify-between items-center">
+                      {/* List Button */}
+                      <Button 
+                        className="pointer-events-auto bg-white text-primary hover:bg-gray-100 shadow-lg"
+                        onClick={() => setShowMapDialog(false)}
+                        title="Show Parking Spots List"
+                      >
+                        <i className="fas fa-list mr-2"></i>
+                        <span className="hidden sm:inline">Show List</span>
+                      </Button>
+                      
+                      {/* Current Location Button */}
+                      <button 
+                        onClick={handleGetCurrentLocation}
+                        className="pointer-events-auto h-14 w-14 bg-primary text-white rounded-full shadow-xl flex items-center justify-center hover:bg-blue-600 transition-all duration-300 border-2 border-white"
+                        title="Get Your Current Location"
+                      >
+                        <i className="fas fa-location-arrow text-xl"></i>
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>

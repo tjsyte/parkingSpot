@@ -51,21 +51,40 @@ export const addMarker = (
 export const getCurrentLocation = (): Promise<Coordinates> => {
   return new Promise((resolve, reject) => {
     if (!navigator.geolocation) {
-      reject(new Error("Geolocation is not supported by your browser"));
+      reject(new Error("Geolocation ay hindi sinusuportahan ng iyong browser. Subukan ang ibang browser."));
       return;
     }
 
+    // Use high accuracy option and longer timeout for better results
     navigator.geolocation.getCurrentPosition(
       (position) => {
+        const { latitude, longitude, accuracy } = position.coords;
+        console.log(`Location accuracy: ${accuracy} meters`);
         resolve({
-          lat: position.coords.latitude,
-          lng: position.coords.longitude
+          lat: latitude,
+          lng: longitude
         });
       },
       (error) => {
-        reject(error);
+        let errorMessage = "Hindi mahanap ang iyong lokasyon. Subukan muli.";
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            errorMessage = "Hindi pinapayagan ang pag-access sa location. Pakibukas ang location permission sa iyong browser/device settings.";
+            break;
+          case error.POSITION_UNAVAILABLE:
+            errorMessage = "Hindi available ang impormasyon ng lokasyon. Subukan muli mamaya.";
+            break;
+          case error.TIMEOUT:
+            errorMessage = "Nag-timeout ang pag-request ng lokasyon. Pakisuri ang iyong koneksyon at subukan muli.";
+            break;
+        }
+        reject(new Error(errorMessage));
       },
-      { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+      { 
+        enableHighAccuracy: true, 
+        timeout: 10000,  // Longer timeout (10 seconds)
+        maximumAge: 0    // Always get a fresh position
+      }
     );
   });
 };
