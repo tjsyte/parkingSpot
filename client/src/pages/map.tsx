@@ -163,9 +163,47 @@ export default function Map() {
       <Header userName={user?.displayName || user?.email || "User"} />
 
       {/* Main Content */}
-      <main className="flex-1 relative h-[calc(100%-4rem)]">
+      <main className="flex-1 flex h-[calc(100%-4rem)]">
+        {/* Sidebar for Parking Spots List - Hidden on Mobile */}
+        <div className="hidden md:block w-80 lg:w-96 bg-white shadow-md z-10">
+          <ParkingSpotList 
+            spots={enhancedSpots}
+            showList={true}
+            onSpotSelect={handleSpotSelect}
+            isLoading={isLoading}
+            userLocation={userLocation}
+          />
+        </div>
+
+        {/* Mobile Slide-in Panel for Parking Spots */}
+        <div className={`md:hidden fixed inset-0 bg-white z-30 transition-transform duration-300 transform ${showParkingList ? 'translate-x-0' : '-translate-x-full'}`}>
+          <div className="h-full flex flex-col">
+            <div className="flex justify-between items-center p-4 border-b">
+              <h2 className="text-lg font-semibold">Parking Spots</h2>
+              <button 
+                onClick={toggleParkingList}
+                className="h-8 w-8 flex items-center justify-center rounded-full hover:bg-gray-100"
+              >
+                <i className="fas fa-times"></i>
+              </button>
+            </div>
+            <div className="flex-1 overflow-auto">
+              <ParkingSpotList 
+                spots={enhancedSpots}
+                showList={true}
+                onSpotSelect={(spot) => {
+                  setShowParkingList(false);
+                  handleSpotSelect(spot);
+                }}
+                isLoading={isLoading}
+                userLocation={userLocation}
+              />
+            </div>
+          </div>
+        </div>
+
         {/* Map Container */}
-        <div className="absolute inset-0 bg-gray-100">
+        <div className="relative flex-1">
           {/* Map */}
           <div id="map" className="h-full w-full">
             {isLoading && (
@@ -177,57 +215,38 @@ export default function Map() {
               </div>
             )}
           </div>
-        </div>
 
-        {/* Floating UI Elements */}
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="h-full w-full flex">
-            {/* Parking Spots List (Floating) */}
-            <div className="h-full pointer-events-auto">
-              <ParkingSpotList 
-                spots={enhancedSpots}
-                showList={showParkingList}
-                onSpotSelect={handleSpotSelect}
-                isLoading={isLoading}
-                userLocation={userLocation}
-              />
-            </div>
-
-            {/* Right Side Controls */}
-            <div className="flex-1 relative">
-              {/* Map Controls */}
-              <div className="absolute top-4 right-4 flex flex-col space-y-2 pointer-events-auto">
-                <button 
-                  onClick={handleZoomIn}
-                  className="h-10 w-10 bg-white rounded-full shadow-md flex items-center justify-center hover:bg-gray-100"
-                >
-                  <i className="fas fa-plus text-gray-600"></i>
-                </button>
-                <button 
-                  onClick={handleZoomOut}
-                  className="h-10 w-10 bg-white rounded-full shadow-md flex items-center justify-center hover:bg-gray-100"
-                >
-                  <i className="fas fa-minus text-gray-600"></i>
-                </button>
-              </div>
-
-              {/* Current Location Button */}
-              <button 
-                onClick={handleGetCurrentLocation}
-                className="absolute bottom-28 sm:bottom-8 right-4 h-12 w-12 bg-primary text-white rounded-full shadow-lg flex items-center justify-center hover:bg-blue-600 pointer-events-auto z-20"
-              >
-                <i className="fas fa-location-arrow"></i>
-              </button>
-
-              {/* Mobile Parking List Toggle Button */}
-              <button 
-                onClick={toggleParkingList}
-                className="sm:hidden absolute bottom-8 right-4 h-12 w-12 bg-white text-primary rounded-full shadow-lg flex items-center justify-center pointer-events-auto z-20"
-              >
-                <i className="fas fa-list"></i>
-              </button>
-            </div>
+          {/* Map Controls - Fixed Position */}
+          <div className="absolute top-4 right-4 flex flex-col space-y-2 z-10">
+            <button 
+              onClick={handleZoomIn}
+              className="h-10 w-10 bg-white rounded-full shadow-md flex items-center justify-center hover:bg-gray-100"
+            >
+              <i className="fas fa-plus text-gray-600"></i>
+            </button>
+            <button 
+              onClick={handleZoomOut}
+              className="h-10 w-10 bg-white rounded-full shadow-md flex items-center justify-center hover:bg-gray-100"
+            >
+              <i className="fas fa-minus text-gray-600"></i>
+            </button>
           </div>
+
+          {/* Current Location Button */}
+          <button 
+            onClick={handleGetCurrentLocation}
+            className="absolute bottom-28 sm:bottom-8 right-4 h-12 w-12 bg-primary text-white rounded-full shadow-lg flex items-center justify-center hover:bg-blue-600 z-10"
+          >
+            <i className="fas fa-location-arrow"></i>
+          </button>
+
+          {/* Mobile Parking List Toggle Button */}
+          <button 
+            onClick={toggleParkingList}
+            className="md:hidden absolute bottom-8 right-4 h-12 w-12 bg-white text-primary rounded-full shadow-lg flex items-center justify-center z-10"
+          >
+            <i className="fas fa-list"></i>
+          </button>
         </div>
       </main>
 

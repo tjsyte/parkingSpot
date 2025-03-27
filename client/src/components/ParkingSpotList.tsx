@@ -50,12 +50,7 @@ export default function ParkingSpotList({
 
   return (
     <div 
-      className={`
-        ${showList ? "block" : "hidden"} 
-        sm:block h-full sm:w-80 lg:w-96 bg-white shadow-xl overflow-y-auto
-        scrollbar-hide rounded-r-lg
-        ${showList && !userLocation ? "absolute inset-0 z-20" : ""}
-      `}
+      className="h-full w-full bg-white overflow-y-auto"
     >
       <div className="sticky top-0 bg-white z-10 p-4 pb-2 border-b">
         <div className="relative">
