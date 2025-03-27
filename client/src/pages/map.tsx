@@ -123,8 +123,6 @@ export default function Map() {
   const userMarkerRef = useRef<L.Marker | null>(null);
   const accuracyCircleRef = useRef<any>(null);
   
-  // State for location permission dialog
-  const [showLocationHelpDialog, setShowLocationHelpDialog] = useState<boolean>(false);
   // State to track if we're currently getting location
   const [isGettingLocation, setIsGettingLocation] = useState<boolean>(false);
   
@@ -322,12 +320,8 @@ export default function Map() {
       toast({
         title: "Hindi ma-access ang lokasyon",
         description: errorMessage,
-        variant: "destructive",
-        action: <Button variant="outline" onClick={() => setShowLocationHelpDialog(true)}>Location Help</Button>
+        variant: "destructive"
       });
-      
-      // Show the location help dialog
-      setShowLocationHelpDialog(true);
     } finally {
       // Make sure we reset the loading state
       setIsGettingLocation(false);
@@ -408,7 +402,7 @@ export default function Map() {
             </div>
             
             {/* Bottom Action Bar */}
-            <div className="p-4 border-t flex justify-between items-center">
+            <div className="p-4 border-t flex flex-col sm:flex-row gap-2 justify-between">
               <div className="text-sm text-gray-600">
                 {userLocation ? (
                   <div className="flex items-center">
@@ -418,21 +412,28 @@ export default function Map() {
                 ) : (
                   <div className="flex items-center">
                     <i className="fas fa-exclamation-circle text-yellow-500 mr-1"></i>
-                    <span>Location not set - click Open Map View to detect your location</span>
+                    <span>Location not set</span>
                   </div>
                 )}
               </div>
-              {!userLocation && (
-                <Button
-                  onClick={() => setShowMapDialog(true)}
-                  variant="outline"
-                  className="text-primary border-primary"
-                  size="sm"
-                >
-                  <i className="fas fa-map-marked-alt mr-1"></i>
-                  View Map
-                </Button>
-              )}
+              <Button
+                onClick={handleGetCurrentLocation}
+                variant="outline"
+                className="text-primary border-primary"
+                disabled={isGettingLocation}
+              >
+                {isGettingLocation ? (
+                  <>
+                    <i className="fas fa-circle-notch fa-spin mr-1"></i>
+                    Hinahanap...
+                  </>
+                ) : (
+                  <>
+                    <i className="fas fa-location-arrow mr-1"></i>
+                    Get My Location
+                  </>
+                )}
+              </Button>
             </div>
           </div>
         </div>
@@ -561,78 +562,7 @@ export default function Map() {
         />
       )}
       
-      {/* Location Help Dialog */}
-      <Dialog open={showLocationHelpDialog} onOpenChange={setShowLocationHelpDialog}>
-        <DialogContent className="sm:max-w-md">
-          <DialogTitle className="flex items-center gap-2 text-xl">
-            <i className="fas fa-location-arrow text-primary"></i>
-            Location Sharing Help
-          </DialogTitle>
-          <DialogDescription>
-            Kelangan ng EzPark Connect ng access sa iyong location para makahanap ng mga parking spots malapit sa iyo.
-          </DialogDescription>
-          
-          <div className="space-y-4 py-2">
-            <div className="space-y-2">
-              <h3 className="font-medium text-lg text-primary">Bakit hindi gumagana ang Location Sharing?</h3>
-              <ul className="list-disc pl-5 space-y-2">
-                <li>Hindi mo pa pinagana ang Location sharing sa browser</li>
-                <li>Hindi aktibo ang GPS mo sa phone o device</li>
-                <li>May problema sa internet connection</li>
-                <li>Nasa loob ka ng gusali o area na may mahina GPS</li>
-              </ul>
-            </div>
-            
-            <div className="space-y-2 border-t border-gray-200 pt-4">
-              <h3 className="font-medium text-lg text-primary">Paano i-enable ang Location:</h3>
-              <div className="rounded-lg bg-slate-50 p-4 space-y-4">
-                <div>
-                  <h4 className="font-semibold">Sa Android:</h4>
-                  <ol className="list-decimal pl-5">
-                    <li>Buksan ang <strong>Settings</strong></li>
-                    <li>Pumunta sa <strong>Privacy</strong> o <strong>Location</strong></li>
-                    <li>I-ON ang <strong>Location services</strong></li>
-                    <li>Tingnan ang browser settings para sa permissions</li>
-                  </ol>
-                </div>
-                
-                <div>
-                  <h4 className="font-semibold">Sa iPhone:</h4>
-                  <ol className="list-decimal pl-5">
-                    <li>Buksan ang <strong>Settings</strong></li>
-                    <li>Pumunta sa <strong>Privacy & Security</strong></li>
-                    <li>Piliin ang <strong>Location Services</strong> at i-ON</li>
-                    <li>Hanapin ang browser mo at piliin ang <strong>While Using</strong></li>
-                  </ol>
-                </div>
-                
-                <div>
-                  <h4 className="font-semibold">Sa Browser:</h4>
-                  <ol className="list-decimal pl-5">
-                    <li>Tingnan ang address bar para sa location icon</li>
-                    <li>I-click ito at piliin na <strong>Allow</strong></li>
-                    <li>Refresh ang page pagkatapos mag-allow</li>
-                  </ol>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          <DialogFooter className="flex gap-2 sm:justify-between">
-            <Button variant="outline" onClick={() => setShowLocationHelpDialog(false)}>Close</Button>
-            <Button onClick={handleGetCurrentLocation} disabled={isGettingLocation}>
-              {isGettingLocation ? (
-                <>
-                  <i className="fas fa-circle-notch fa-spin mr-1"></i>
-                  Hinahanap...
-                </>
-              ) : (
-                <>Try Again</>
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+
     </div>
   );
 }
